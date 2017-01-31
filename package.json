@@ -1,0 +1,23 @@
+{
+  "name": "NodeIrcBot",
+  "version": "0.0.1",
+  "description": "IRC Services for discutea.com written in NodeJs.",
+  "homepage": "https://discutea.com/",
+  "author": "David Verdier",
+  "license": "Apache-2.0",
+  "preferGlobal": "true",
+  "contributors ": [{
+    "name": "David Verdier",
+    "web": "https://discutea.com"
+  }],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Discutea/NodeIrcBot.git"
+  },
+  "dependencies": {
+    "daemonize2": "0.4.2"
+  },
+  "engines": {
+    "node": ">=0.10"
+  }
+}

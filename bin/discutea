@@ -1,0 +1,12 @@
+#!/bin/sh
+basedir=`dirname "$0"`
+
+case `uname` in
+    *CYGWIN*) basedir=`cygpath -w "$basedir"`;;
+esac
+
+$(command -v nodejs || command -v node) $basedir/../src/launcher.js "$@"
+ret=$?
+
+exit $ret
+

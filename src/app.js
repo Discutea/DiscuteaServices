@@ -1,5 +1,9 @@
-var config = require('../conf/config.js');
-var irc = require('./protocol/' + config.protocol.toLowerCase() + '.js');
+var loader = require("./autoloader");
 
-var client = new irc.ircClient();
-client.connect();
+var s = new loader.Protocol.ircClient();
+
+s.connect();
+
+s.addListener('ping', function (data) {
+    console.log('test listener => ' + data);
+});

@@ -3,8 +3,10 @@ exports.ircClient = ircClient;
 var config = require('../../conf/config');
 var net  = require('net');
 var events = require('events');
+var user = require('../user');
 
 function ircClient() {
+    this.users = [];
     this.server = config.server;
     this.port = config.port;
     this.sid = config.sid;
@@ -22,7 +24,7 @@ ircClient.prototype.connect = function () {
         client = net.createConnection(that.port, that.server);
 
     client.addListener('connect', function () {
-    timestamp = Math.floor(Date.now() / 1000);
+        timestamp = Math.floor(Date.now() / 1000);
         client.write("CAPAB START 1202\r\n");
         client.write("CAPAB CAPABILITIES :PROTOCOL=1202\r\n");
         client.write("CAPAB END\r\n");
@@ -30,11 +32,11 @@ ircClient.prototype.connect = function () {
         client.write(':'+that.sid+' BURST '+timestamp +'\r\n');
         client.write(':'+that.sid+' ENDBURST\r\n')
         client.write(':'+that.sid+' UID '+that.sid+'AAAAAA '+timestamp+' NodeJs node.discutea.com node.discutea.com Discutea 127.0.0.1 '+timestamp+' +IWBOiows +*:99 M Service\r\n');
-        client.write(':'+that.sid+'AAAAAA JOIN #equipe\r\n'); 
+        client.write(':'+that.sid+'AAAAAA JOIN #Node.Js\r\n'); 
     });
 
     client.addListener('data', function (data) { 
-        args = data.toString().split('\n');
+        args = data.toString().split(/\n|\r/);
         args.forEach(function(arg) {
             that.dispatcher(arg);
         });
@@ -47,6 +49,26 @@ ircClient.prototype.connect = function () {
     this.client = client;
 };
 
+ircClient.prototype.introduceUser = function (data, splited) {
+    realname = data.split(':')[2];
+    
+    var u = new user();
+    u.uid = splited[2];
+    u.time = parseInt(splited[3]);
+    u.nick = splited[4];
+    u.host = splited[5];
+    u.vhost = splited[6];
+    u.ident = splited[7];
+    u.ip = splited[8];
+  //  console.log('mode => ' + splited[10]);
+    u.realname = realname;
+    
+    this.users.push(u);
+    
+    return u;
+
+}
+
 ircClient.prototype.dispatcher = function (data) {
     splited = data.split(' ');
 
@@ -58,8 +80,13 @@ ircClient.prototype.dispatcher = function (data) {
         case 'ERROR':
             console.log(data);
             break;
+        case 'UID':
+            u = this.introduceUser(data, splited);
+            this.emit('user_connect', u);
+            break;
         default:
-          //  console.log(data);
+           // console.log(data);
             break;
     }
+    
 };

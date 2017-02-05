@@ -35,3 +35,5 @@ Bot.prototype.send = function(command) {
 Bot.prototype.join = function(channel) {
     this.send('JOIN', channel);
 }
+
+    

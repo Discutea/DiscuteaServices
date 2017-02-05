@@ -56,8 +56,7 @@ Ircd.prototype.introduceBot = function (bot) {
     
 Ircd.prototype.dispatcher = function (data) {
     splited = data.split(' ');
- //   console.log(data);
-    
+    splited2 = data.split(':');
     switch (splited[1]) {
         case 'PING':
             this.socket.write(':' + this.sid + ' PONG ' + this.sid + ' ' + splited[2] + '\r\n');   
@@ -70,6 +69,11 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'ERROR':
             console.log(data);
+            break;
+        case 'MODE':
+            u = this.findUser(splited[0]);
+            u.setMode(splited2[2]);
+            this.emit('user_mode', u, splited[2]);
             break;
         case 'UID':
             u = this.introduceUser(data, splited);
@@ -89,23 +93,15 @@ Ircd.prototype.dispatcher = function (data) {
 };    
 
 Ircd.prototype.destroyUser = function (splited, data) {
-            u = this.findUser(splited[0]);
-            if ( u !== undefined) {
-                uid = u.uid;
-               reason = data.split(':')[2];
-               this.emit('user_disconnect', u.nick, reason, data);
-               delete u;
-               delete this.users[uid];
-               console.log(uid);
-               console.log('U ' + u);
-               console.log('THIS ' + this.users[uid]);
-            } else {
-                return false;
-            }
-            
-            
-    
-            
+    u = this.findUser(splited[0]);
+    if ( u !== undefined) {
+        uid = u.uid;
+        nick = u.nick;
+        reason = data.split(':')[2];
+        this.emit('user_disconnect', u.nick, reason, data);
+        delete u;
+        delete this.users[uid];        
+    }   
 }
 
 Ircd.prototype.introduceUser = function (data, splited) {
@@ -119,7 +115,7 @@ Ircd.prototype.introduceUser = function (data, splited) {
     u.vhost = splited[6];
     u.ident = splited[7];
     u.ip = splited[8];
-  //  console.log('mode => ' + splited[10]);
+    u.setMode(splited[10]);
     u.realname = realname;
     
     uid = splited[2];
@@ -143,19 +139,8 @@ Ircd.prototype.findUser = function (uid)
     return this.users[uid];
 };
 
-/*
-    client.addListener('close', function (data) {
-        // Disconnected from server
-    });
-    
-    this.client = client;
-};
-
-
-
-
-Ircd.prototype.findUser = function (nick)
-{
+Ircd.prototype.findUserByNick = function (nick)
+{    
     for (i in this.users)
     {
         if (this.users[i].nick == nick)
@@ -163,5 +148,6 @@ Ircd.prototype.findUser = function (nick)
             return this.users[i];
         }
     }
+
+    return undefined;
 };
-*/

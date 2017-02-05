@@ -11,7 +11,7 @@ function User()
 	this.vhost = undefined;
 	this.ident = undefined;
     this.ip = undefined;
-    this.mode = [];
+    this.modes = [];
 	this.realname = undefined;
 }
 
@@ -19,44 +19,54 @@ User.prototype.toString = function ()
 {
 	return "User(" + this.nick + ")";
 }
-/*
-User.prototype.__defineGetter__("uid", function ()
-{
-	return this.uid;
-});
 
-User.prototype.__defineGetter__("time", function ()
+User.prototype.setMode = function (modes)
 {
-	return this.time;
-});
+    if ((typeof modes == 'string') && (modes.length >= 1)) {
+        var that = this;
+        addModes = modes.split('+')[1];
+        delModes = modes.split('-')[1];
 
-User.prototype.__defineGetter__("nick", function ()
-{
-	return this.nick;
-});
+        if (addModes !== undefined){
+            for (var i = 0; i < addModes.length; i++) {
+                that.addMode(addModes[i]);
+            }
+        }
 
-User.prototype.__defineGetter__("host", function ()
-{
-	return this.host;
-});
+        if (delModes !== undefined){
+            for (var i = 0; i < delModes.length; i++) {
+                that.delMode(delModes[i]);
+            }
+        }
+    }
+}
 
-User.prototype.__defineGetter__("vhost", function ()
+User.prototype.addMode = function (mode)
 {
-	return this.vhost;
-});
+    if (this.hasMode(mode) === false) {
+        this.modes.push(mode);
+    }
+}
 
-User.prototype.__defineGetter__("ident", function ()
+User.prototype.delMode = function (mode)
 {
-	return this.ident;
-});
+    for (i in this.modes)
+    {
+        if (this.modes[i] == mode)
+        {
+            this.modes.splice(i, 1);
+        }
+    }
+}
 
-User.prototype.__defineGetter__("ip", function ()
-{
-	return this.ip;
-});
-
-User.prototype.__defineGetter__("realname", function ()
-{
-	return this.realname;
-});
-*/
+User.prototype.hasMode = function(mode) {
+    for (i in this.modes)
+    {
+        if (this.modes[i] == mode)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}

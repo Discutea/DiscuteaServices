@@ -1,16 +1,22 @@
-var loader = require("./autoloader");
-var s = new loader.Protocol.ircClient();
+var config = require('../conf/config');
+var protocol = require("./protocol/"+config.link.protocol);
+var bot = require('./bot');
 
-s.connect();
 
-s.addListener('ping', function (data) {
-    console.log('test listener => ' + data);
+var ircd = new protocol.Ircd(config.link);
+
+
+ircd.socket.on('connect', function () {
+
+  //  ircd.sendServer();
+
+   
+    ircd.on('ircd_ready', function () {
+        console.log('bot introduce');
+        ircd.introduceBot( new bot.Bot( 'AAAAAA', 'jjj', 'NodeJs' ) );
+        ircd.introduceBot( new bot.Bot( 'BBBBBB', 'jjj', 'NodeJs2' ) );
+        ircd.introduceBot( new bot.Bot( 'CCCCCC', 'jjj', 'NodeJs3' ) );
+    });
+   
 });
-
-
-//if (Math.floor(Date.now() / 1000))
-s.addListener('user_connect', function (u) {
-    console.log('user => ' + u.nick);
-});
-
 

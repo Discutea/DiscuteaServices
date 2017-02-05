@@ -2,11 +2,13 @@ exports.Ircd= Ircd;
 
 var events = require('events');
 var user = require('../user');
+var server = require('../server');
 var net  = require('net');
 var tls  = require('tls');
 
 function Ircd(cfg) {
     this.users = [];
+    this.servers = [];
     this.socket = this.connect(cfg.port, cfg.server);
     this.sid = cfg.sid;
     this.host = cfg.host;
@@ -85,12 +87,29 @@ Ircd.prototype.dispatcher = function (data) {
         case 'QUIT':
             this.destroyUser(splited, data);
             break;
+        case 'SERVER':
+            s = this.introduceServer(data, splited);
+            this.emit('server_connect', s);
+            break;
         default:
            // console.log(data);
             break;
     }
     
 };    
+
+Ircd.prototype.introduceServer = function (data, splited) {
+    var s = new server();
+    s.sid = splited[5];
+    s.name = splited[2];
+    s.desc = data.split(':')[2];
+    
+    console.log(s);
+
+    this.servers[s.sid] = s;
+    
+    return s;
+}
 
 Ircd.prototype.destroyUser = function (splited, data) {
     u = this.findUser(splited[0]);
@@ -100,11 +119,29 @@ Ircd.prototype.destroyUser = function (splited, data) {
         reason = data.split(':')[2];
         this.emit('user_disconnect', u.nick, reason, data);
         delete u;
-        delete this.users[uid];        
+        delete this.users[uid];
     }   
 }
 
+Ircd.prototype.findServer = function (sid)
+{
+    if (sid.charAt(0) == ":") {
+        sid = sid.substring(1);
+    }
+    
+    return this.servers[sid];
+};
+
 Ircd.prototype.introduceUser = function (data, splited) {
+    
+    s = this.findServer(splited[0]);
+    
+    uid = splited[2];
+    
+    if ( this.users[uid] !== undefined) {
+        delete this.users[uid];
+    }
+    
     realname = data.split(':')[2];
     
     var u = new user();
@@ -117,14 +154,9 @@ Ircd.prototype.introduceUser = function (data, splited) {
     u.ip = splited[8];
     u.setMode(splited[10]);
     u.realname = realname;
+    u.server = s;
     
-    uid = splited[2];
-    
-    if ( this.users[uid] !== undefined) {
-        delete this.users[uid];
-    }
-    
-    this.users[u.uid] = u;
+    this.users[uid] = u;
     
     return u;
 
@@ -151,3 +183,4 @@ Ircd.prototype.findUserByNick = function (nick)
 
     return undefined;
 };
+

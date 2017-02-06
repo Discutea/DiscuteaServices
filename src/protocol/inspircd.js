@@ -77,7 +77,7 @@ Ircd.prototype.dispatcher = function (data) {
         case 'MODE':
             u = this.findUser(splited[0]);
             u.setMode(splited2[2]);
-            this.emit('user_mode', u, splited[2]);
+            this.emit('user_mode', u, splited2[2]);
             break;
         case 'UID':
             u = this.introduceUser(data, splited);
@@ -102,7 +102,28 @@ Ircd.prototype.dispatcher = function (data) {
             cusers = splited2[2].split(',');
             c.addUsers(cusers);           
             break;
-        case 'METADATA':
+        case 'AWAY':
+            u = this.findUser(splited[0]);
+            u.away = splited2[2];
+            if (splited2[2] === undefined) {
+                this.emit('user_away_off', u);
+            } else {
+                this.emit('user_away_on', u, splited2[2]);
+            }
+            break;
+        case 'TOPIC':
+            u = this.findUser(splited[0]);
+            c = this.findChannel(splited[2]);
+            lastTopic = c.topic;
+            c.topic = splited2[2];
+            this.emit('channel_chg_topic', c, u, lastTopic);
+            break;
+        case 'NICK':
+            u = this.findUser(splited[0]);
+            lastnick = u.nick;
+            u.lastnicks.push(lastnick);
+            u.nick = splited[2];
+            this.emit('user_nick', u, lastnick);
             break;
         case 'PART':
             u = this.findUser(splited[0]);

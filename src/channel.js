@@ -7,6 +7,7 @@ function Channel()
     this.time = undefined;
     this.modes = [];
     this.ircd = undefined;
+    this.topic = undefined;
 }
 
 Channel.prototype.toString = function ()

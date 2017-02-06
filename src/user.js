@@ -15,6 +15,8 @@ function User()
     this.realname = undefined;
     this.server = undefined;
     this.channels = [];
+    this.away = undefined;
+    this.lastnicks = [];
 }
 
 User.prototype.toString = function ()

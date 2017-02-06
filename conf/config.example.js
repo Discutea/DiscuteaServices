@@ -8,6 +8,11 @@ var conf = {
         desc: "Sample IRC service with NodeJs for discutea.com",
         host: "node.discutea.com"
     },
+    modules: {
+        loader: [
+            'Logger'
+        ],
+    }
 };
 
 module.exports = conf;

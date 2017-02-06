@@ -15,7 +15,8 @@
     "url": "https://github.com/Discutea/NodeIrcBot.git"
   },
   "dependencies": {
-    "daemonize2": "0.4.2"
+    "daemonize2": "~0.4.2",
+    "fs-finder": "~1.8.1"
   },
   "engines": {
     "node": ">=0.10"

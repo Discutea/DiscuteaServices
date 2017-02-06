@@ -3,23 +3,17 @@ exports.Bot = Bot;
 function Bot(uid, host, nick)
 {
     this.ircd = undefined;
-	this.uid = uid;
+    this.uid = uid;
     this.host = host;
-	this.nick = nick;
+    this.nick = nick;
     this.me = undefined;
-    
-    timestamp = Math.floor(Date.now() / 1000);
-        
-    this.uptime = timestamp;
-}
-
+    this.uptime = Math.floor(Date.now() / 1000);
+};
 
 Bot.prototype.setIrcd = function (ircd) {
     this.ircd = ircd;
     this.me = ircd.sid + this.uid;
-    
-}
-
+};
 
 Bot.prototype.send = function(command) {
     var args = Array.prototype.slice.call(arguments);
@@ -34,6 +28,4 @@ Bot.prototype.send = function(command) {
 
 Bot.prototype.join = function(channel) {
     this.send('JOIN', channel);
-}
-
-    
+};

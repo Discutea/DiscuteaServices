@@ -13,11 +13,13 @@ function User()
     this.ip = undefined;
     this.modes = [];
 	this.realname = undefined;
+    this.server = undefined;
+    this.channels = [];
 }
 
 User.prototype.toString = function ()
 {
-	return "User(" + this.nick + ")";
+	return this.nick;
 }
 
 User.prototype.setMode = function (modes)
@@ -46,6 +48,31 @@ User.prototype.addMode = function (mode)
     if (this.hasMode(mode) === false) {
         this.modes.push(mode);
     }
+}
+
+User.prototype.addChannel = function (c)
+{
+    if (this.channels[c.name] === undefined) {
+        this.channels[c.name] = c;
+    }
+}
+
+User.prototype.removeChannel = function (c)
+{
+    var that = this;
+    if (that.channels[c.name] === undefined) {
+        return;
+    }
+    
+    for (i in that.channels)
+    {
+        if (that.channels[i] === c)
+        {
+            that.channels.splice(i, 1);
+        }
+    }
+    
+    return true;
 }
 
 User.prototype.delMode = function (mode)

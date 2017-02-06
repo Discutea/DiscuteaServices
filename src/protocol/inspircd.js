@@ -3,12 +3,14 @@ exports.Ircd= Ircd;
 var events = require('events');
 var user = require('../user');
 var server = require('../server');
+var channel = require('../channel');
 var net  = require('net');
 var tls  = require('tls');
 
 function Ircd(cfg) {
     this.users = [];
     this.servers = [];
+    this.channels = [];
     this.socket = this.connect(cfg.port, cfg.server);
     this.sid = cfg.sid;
     this.host = cfg.host;
@@ -53,7 +55,6 @@ Ircd.prototype.sendServer = function () {
 Ircd.prototype.introduceBot = function (bot) {
     bot.setIrcd(this);
     this.socket.write(':'+this.sid+' UID '+this.sid+bot.uid + ' '+bot.uptime+' ' + bot.nick + ' node.discutea.com nodejjj.discutea.com Discutea 127.0.0.1 '+bot.uptime+' +IWBOiows +*:99 M Service\r\n');
-    bot.join('#Node.Js');
 }
     
 Ircd.prototype.dispatcher = function (data) {
@@ -91,6 +92,25 @@ Ircd.prototype.dispatcher = function (data) {
             s = this.introduceServer(data, splited);
             this.emit('server_connect', s);
             break;
+        case 'FJOIN':
+            c = this.findChannel(splited[2]);
+            if (c === undefined) {
+                this.emit('introduce_channel', c);
+                c = this.introduceChannel(data, splited, splited2);
+            }
+            cusers = splited2[2].split(',');
+            c.addUsers(cusers);            
+            break;
+        case 'PART':
+            u = this.findUser(splited[0]);
+            c = this.findChannel(splited[2]);
+            if ((c !== undefined) && (u !== undefined)) {
+                u.removeChannel(c);
+            }
+
+        //:52FAFS3PD PART #Node.Js :Leaving
+            console.log(data);
+            break;
         default:
            // console.log(data);
             break;
@@ -98,17 +118,41 @@ Ircd.prototype.dispatcher = function (data) {
     
 };    
 
+
+Ircd.prototype.introduceChannel = function (data, splited) {
+    var that = this;
+
+    var c = new channel();
+    c.name = splited[2];
+    c.time = splited[3];
+    c.setMode(splited[4]);
+    c.ircd = that;
+
+    this.channels[c.name] = c;
+
+    return c;
+}
+
 Ircd.prototype.introduceServer = function (data, splited) {
     var s = new server();
     s.sid = splited[5];
     s.name = splited[2];
     s.desc = data.split(':')[2];
-    
-    console.log(s);
 
     this.servers[s.sid] = s;
-    
     return s;
+}
+
+Ircd.prototype.destroyServer = function (splited, data) {
+    s = this.findServer(splited[0]);
+    if ( s !== undefined) {
+        sid = s.sid;
+        name = s.name;
+        reason = data.split(':')[2];
+        this.emit('server_disconnect', name, reason, data);
+        delete s;
+        delete this.servers[sid];
+    }   
 }
 
 Ircd.prototype.destroyUser = function (splited, data) {
@@ -161,6 +205,15 @@ Ircd.prototype.introduceUser = function (data, splited) {
     return u;
 
 }
+
+Ircd.prototype.findChannel = function (name)
+{
+    if (name.charAt(0) == ":") {
+        name = name.substring(1);
+    }
+    
+    return this.channels[name];
+};
 
 Ircd.prototype.findUser = function (uid)
 {

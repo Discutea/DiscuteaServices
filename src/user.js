@@ -2,24 +2,24 @@ exports = module.exports = User;
 
 function User()
 {
-	if (!(this instanceof User)) { return new User(); }
+    if (!(this instanceof User)) { return new User(); }
 
-	this.uid = undefined;
+    this.uid = undefined;
     this.time = undefined;
-	this.nick = undefined;
-	this.host = undefined;
-	this.vhost = undefined;
-	this.ident = undefined;
+    this.nick = undefined;
+    this.host = undefined;
+    this.vhost = undefined;
+    this.ident = undefined;
     this.ip = undefined;
     this.modes = [];
-	this.realname = undefined;
+    this.realname = undefined;
     this.server = undefined;
     this.channels = [];
 }
 
 User.prototype.toString = function ()
 {
-	return this.nick;
+    return this.nick;
 }
 
 User.prototype.setMode = function (modes)
@@ -59,20 +59,13 @@ User.prototype.addChannel = function (c)
 
 User.prototype.removeChannel = function (c)
 {
-    var that = this;
-    if (that.channels[c.name] === undefined) {
-        return;
-    }
-    
-    for (i in that.channels)
+    for (i in this.channels)
     {
-        if (that.channels[i] === c)
+        if (this.channels[i] === c)
         {
-            that.channels.splice(i, 1);
+            delete this.channels[i];
         }
     }
-    
-    return true;
 }
 
 User.prototype.delMode = function (mode)

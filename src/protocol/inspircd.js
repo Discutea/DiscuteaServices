@@ -101,15 +101,14 @@ Ircd.prototype.dispatcher = function (data) {
             cusers = splited2[2].split(',');
             c.addUsers(cusers);            
             break;
+        case 'METADATA':
+            break;
         case 'PART':
             u = this.findUser(splited[0]);
             c = this.findChannel(splited[2]);
             if ((c !== undefined) && (u !== undefined)) {
                 u.removeChannel(c);
             }
-
-        //:52FAFS3PD PART #Node.Js :Leaving
-            console.log(data);
             break;
         default:
            // console.log(data);

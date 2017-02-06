@@ -29,3 +29,7 @@ Bot.prototype.send = function(command) {
 Bot.prototype.join = function(channel) {
     this.send('JOIN', channel);
 };
+
+Bot.prototype.msg = function(target, message) {
+    this.send('PRIVMSG', target, message);
+};

@@ -71,6 +71,7 @@ Ircd.prototype.dispatcher = function (data) {
             }
             break;
         case 'ERROR':
+            this.emit('error', data);
             console.log(data);
             break;
         case 'MODE':
@@ -80,7 +81,7 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'UID':
             u = this.introduceUser(data, splited);
-            this.emit('user_connect', u);
+            this.emit('user_introduce', u);
             break;
         case 'PRIVMSG':
             this.emit('privmsg', data);
@@ -90,16 +91,16 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'SERVER':
             s = this.introduceServer(data, splited);
-            this.emit('server_connect', s);
+            this.emit('server_introduce', s);
             break;
         case 'FJOIN':
             c = this.findChannel(splited[2]);
             if (c === undefined) {
-                this.emit('introduce_channel', c);
                 c = this.introduceChannel(data, splited, splited2);
+                this.emit('channel_introduce', c);
             }
             cusers = splited2[2].split(',');
-            c.addUsers(cusers);            
+            c.addUsers(cusers);           
             break;
         case 'METADATA':
             break;
@@ -108,6 +109,12 @@ Ircd.prototype.dispatcher = function (data) {
             c = this.findChannel(splited[2]);
             if ((c !== undefined) && (u !== undefined)) {
                 u.removeChannel(c);
+                this.emit('user_part', u, c);
+                if (c.getUsers().length <= 0)
+                {
+                    this.destroyChannel(c);
+                    this.emit('channel_destroy', c.name);
+                }
             }
             break;
         default:
@@ -148,9 +155,16 @@ Ircd.prototype.destroyServer = function (splited, data) {
         sid = s.sid;
         name = s.name;
         reason = data.split(':')[2];
-        this.emit('server_disconnect', name, reason, data);
+        this.emit('server_destroy', name, reason, data);
         delete s;
         delete this.servers[sid];
+    }   
+}
+
+Ircd.prototype.destroyChannel = function (c) {
+    if ( c !== undefined) {
+        delete this.channels[c.name];
+        delete c;
     }   
 }
 
@@ -160,7 +174,7 @@ Ircd.prototype.destroyUser = function (splited, data) {
         uid = u.uid;
         nick = u.nick;
         reason = data.split(':')[2];
-        this.emit('user_disconnect', u.nick, reason, data);
+        this.emit('user_destroy', u.nick, reason, data);
         delete u;
         delete this.users[uid];
     }   

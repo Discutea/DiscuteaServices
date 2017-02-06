@@ -25,6 +25,7 @@ Channel.prototype.addUsers = function (cusers) {
             u = that.ircd.users[uid];
             if (u !== undefined) {
                 u.addChannel(that);
+                that.ircd.emit('user_join', u, that);
             }
         }
     });

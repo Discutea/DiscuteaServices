@@ -1,4 +1,5 @@
 exports = module.exports = Channel;
+var remove = require('unordered-array-remove');
 
 function Channel(name, uptime)
 {
@@ -51,7 +52,7 @@ Channel.prototype.delMode = function (mode)
     {
         if (this.modes[i] == mode)
         {
-            this.modes.splice(i, 1);
+            remove(this.modes, i);
         }
     }
 }

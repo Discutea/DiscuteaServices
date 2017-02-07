@@ -8,6 +8,7 @@ var net  = require('net');
 var tls  = require('tls');
 var find = require('array-find');
 var remove = require('unordered-array-remove');
+var geoip = require('geoip-lite');
 
 function Protocol(cfg) {
     this.users = [];
@@ -78,26 +79,42 @@ Protocol.prototype.introduceServer = function (sid, name, desc) {
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
     var u = new user(uid, nick, ident, host, vhost, ip, uptime, realname, s);
     u.setMode(modes);
-    
+
+    u.setGeoInfos( geoip.lookup(ip) );
+
     this.users.push(u);
     this.emit('user_introduce', u);
+    
+    if (realname !== undefined) {
+        age = realname.split(' ');
+        age = parseInt(age[0]);
+        if ( (!isNaN(age)) && (age < 99) && (age > 9) ) {
+            console.log(age);
+            u.age = age;
+            if (age <= 19) {
+                this.emit('user_is_mineur', u);
+            }
+        }
+    }
+
 }
 
 Protocol.prototype.executeChannelPart = function (c, u) {
     u.removeChannel(c);
     this.emit('user_part', u, c);
     
-    if (c.countUsers.length <= 0)
+    if (c.countUsers <= 0)
     {
         this.destroyChannel(c);
     }
 }
 
 Protocol.prototype.executeKick = function (u, target, c, reason) {
+
     target.removeChannel(c);
     this.emit('user_kick', u, target, c, reason);
     
-    if (c.countUsers.length <= 0)
+    if (c.countUsers <= 0)
     {
         this.destroyChannel(c);
     }
@@ -146,4 +163,16 @@ Protocol.prototype.introduceChannel = function (name, uptime, modes) {
     this.emit('channel_introduce', c);
     
     return c;
+}
+
+Protocol.prototype.processIRCv3AccountName = function (u, account) {
+    if (account.length > 0) {
+        u.account = account;
+        u.registered = true;
+        this.emit('user_accountname', u, account);  
+    } else {
+        u.account = undefined;
+        u.registered = false;
+        this.emit('user_accountname_off', u); 
+    }
 }

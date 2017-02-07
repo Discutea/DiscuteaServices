@@ -1,5 +1,4 @@
 exports = module.exports = User;
-
 var remove = require('unordered-array-remove');
 
 function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
@@ -15,13 +14,36 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.time = uptime;
     this.realname = realname;
     this.server = s;
-    
+    this.account = undefined;
+    this.registered = false;
+    this.age = undefined;
     this.modes = [];
     this.channels = [];
     this.away = undefined;
     this.lastnicks = [];
-    
+    this.country = undefined;
+    this.region = undefined;
+    this.city = undefined;
     this.index = 0;
+}
+
+User.prototype.setGeoInfos = function (geo)
+{
+    country = geo ? geo.country : undefined;
+    if (country != ""){
+        this.country = country;
+    }
+    
+    region = geo ? geo.region : undefined;
+    if (region != ""){
+        this.region = region;
+    }
+    
+    city = geo ? geo.city : undefined;
+    if (city != ""){
+        this.city = city;
+    }
+
 }
 
 User.prototype.toString = function ()
@@ -84,7 +106,7 @@ User.prototype.delMode = function (mode)
     {
         if (this.modes[i] == mode)
         {
-            this.modes.splice(i, 1);
+            remove(this.modes, i);
         }
     }
 }

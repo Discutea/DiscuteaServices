@@ -75,6 +75,9 @@ Ircd.prototype.dispatcher = function (data) {
             this.emit('error', data);
             console.log(data);
             break;
+        case 'METADATA':
+            this.processIRCv3(splited, splited2, data);
+            break;
         case 'PRIVMSG':
             this.emit('privmsg', data);
             break;
@@ -109,7 +112,7 @@ Ircd.prototype.processNick = function (splited) {
     u = this.findUser(splited[0]);
             
     if (u !== undefined) {
-        newNick = splited2[2];
+        newNick = splited[2];
         this.executeNick(u, newNick);
     }
 }
@@ -214,3 +217,20 @@ Ircd.prototype.findChannel = function (name)
 {      
     return this.findBy(this.channels, 'name', name);
 };
+
+Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
+    switch (splited[3]) {
+        case 'accountname':
+            u = this.findUser(splited[2]);
+            if (u !== undefined) {
+                account = splited2[2];
+                this.processIRCv3AccountName(u, account);
+            }
+            break;
+        case 'filter':
+            break;
+        default:
+           // console.log(data);
+            break;
+    }
+}

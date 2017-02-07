@@ -17,7 +17,22 @@ Logger.prototype.init = function() {
    });
 
    this.ircd.on('user_introduce', function (u) {
-       bot.msg(mychan, u.nick + ' is introduce');
+       var geo = '';
+       
+       if (u.country !== undefined) {
+          geo = ' country: ' + u.country; 
+       }
+       
+       if (u.region !== undefined) {
+          geo = geo + ' region: ' + u.region; 
+       }
+
+       if (u.city !== undefined) {
+          geo = geo + ' city: ' + u.city; 
+       }
+
+       bot.msg(mychan, u.nick + ' is introduce ' + geo);
+
    });   
    
    this.ircd.on('user_destroy', function (u, reason) {
@@ -67,7 +82,20 @@ Logger.prototype.init = function() {
    this.ircd.on('user_kick', function (u, target, c, reason) {
        bot.msg(mychan, u.nick + ' kick => ' + target.nick + ' on ' + c.name + ' ==> ' + reason);
    });
-    
+   
+   this.ircd.on('user_accountname', function (u, account) {
+       bot.msg(mychan, u.nick + ' user_accountname => ' + account);
+   });
+
+   this.ircd.on('user_accountname_off', function (u) {
+       bot.msg(mychan, u.nick + ' user_accountname_off');
+   });   
+   
+   this.ircd.on('user_is_mineur', function (u) {
+       bot.msg(mychan, u.nick + ' user_is_mineur age: ' + u.age);
+   });
+
+   
 };
 
 module.exports = Logger;

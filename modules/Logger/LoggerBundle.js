@@ -6,9 +6,9 @@ function Logger(ircd) {
 
 Logger.prototype.init = function() {
     
-    var mychan = '#Node.Js';
+   var mychan = '#Node.Js';
     
-   var bot = new bobot.Bot( 'AAAAAA', 'jjj', 'Logger' );
+   var bot = new bobot.Bot( 'AAAAAA', 'NodeJs.Discutea.com', 'Logger', 'Discutea', '+IWBOiows +*', '-- X Bot' );
    this.ircd.introduceBot( bot );
    bot.join(mychan);
    

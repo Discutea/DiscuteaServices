@@ -1,11 +1,16 @@
 exports.Bot = Bot;
+var ip = require("ip");
 
-function Bot(uid, host, nick)
+function Bot(uid, vhost, nick, ident, modes, realname)
 {
+    this.ip = ip.address();
+    this.ident = ident;
+    this.realname = realname;
     this.ircd = undefined;
     this.uid = uid;
-    this.host = host;
+    this.vhost = vhost;
     this.nick = nick;
+    this.modes = modes;
     this.me = undefined;
     this.uptime = Math.floor(Date.now() / 1000);
 };

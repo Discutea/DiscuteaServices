@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "daemonize2": "~0.4.2",
-    "fs-finder": "~1.8.1"
+    "fs-finder": "~1.8.1",
+    "ip": "~1.1.4"
   },
   "engines": {
     "node": ">=0.10"

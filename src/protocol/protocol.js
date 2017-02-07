@@ -6,6 +6,8 @@ var server = require('../server');
 var channel = require('../channel');
 var net  = require('net');
 var tls  = require('tls');
+var find = require('array-find');
+var remove = require('unordered-array-remove');
 
 function Protocol(cfg) {
     this.users = [];
@@ -27,19 +29,6 @@ Protocol.prototype.connect = function (port, server) {
     return s;
 }
 
-Protocol.prototype.introduceChannel = function (data, splited) {
-    var that = this;
-    var c = new channel();
-    c.name = splited[2];
-    c.time = splited[3];
-    c.setMode(splited[4]);
-    c.ircd = that;
-
-    this.channels[c.name] = c;
-
-    return c;
-}
-
 Protocol.prototype.write = function(args) { 
     if (typeof args !== 'object') {
         var args = Array.prototype.slice.call(arguments);
@@ -48,134 +37,113 @@ Protocol.prototype.write = function(args) {
     this.socket.write(args.join(' ') + '\r\n');
 };
 
-Protocol.prototype.introduceServer = function (data, splited) {
-    var s = new server();
-    s.sid = splited[5];
-    s.name = splited[2];
-    s.desc = data.split(':')[2];
+Protocol.prototype.destroyUser = function (u, reason) {
+    nick = u.nick;
+    index = u.index;
+    
+    u.channels.forEach(function(c) {        
+        c.countUsers--;
+    });
 
-    this.servers[s.sid] = s;
+    delete u;
+    remove(this.users, index);
+    this.emit('user_destroy', u, reason);
+}
+
+Protocol.prototype.findBy = function (array, criteria, target)
+{
+    if (target.charAt(0) == ":") {
+        target = target.substring(1);
+    }
+
+    return find(array, function (search, index) {
+        if (search[criteria] === target)
+        {
+            search.index = index;
+            return search;
+        }
+    });
+};
+
+/* INTRODUCE OBJECT (channel, server, user ...) */
+
+Protocol.prototype.introduceServer = function (sid, name, desc) {
+    var s = new server(sid, name, desc);
+    this.emit('server_introduce', s);
+    this.servers.push(s);
+
     return s;
 }
 
-Protocol.prototype.destroyServer = function (splited, data) {
-    s = this.findServer(splited[0]);
-    if ( s !== undefined) {
-        sid = s.sid;
-        name = s.name;
-        reason = data.split(':')[2];
-        this.emit('server_destroy', name, reason, data);
-        delete s;
-        delete this.servers[sid];
-    }   
+Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
+    var u = new user(uid, nick, ident, host, vhost, ip, uptime, realname, s);
+    u.setMode(modes);
+    
+    this.users.push(u);
+    this.emit('user_introduce', u);
+}
+
+Protocol.prototype.executeChannelPart = function (c, u) {
+    u.removeChannel(c);
+    this.emit('user_part', u, c);
+    
+    if (c.countUsers.length <= 0)
+    {
+        this.destroyChannel(c);
+    }
+}
+
+Protocol.prototype.executeKick = function (u, target, c, reason) {
+    target.removeChannel(c);
+    this.emit('user_kick', u, target, c, reason);
+    
+    if (c.countUsers.length <= 0)
+    {
+        this.destroyChannel(c);
+    }
 }
 
 Protocol.prototype.destroyChannel = function (c) {
-    if ( c !== undefined) {
-        delete this.channels[c.name];
-        delete c;
-    }   
+    index = c.index;
+    name = c.name;
+    
+    delete c;
+    remove(this.channels, index);
+    this.emit('channel_destroy', name);
 }
 
-Protocol.prototype.destroyUser = function (splited, data) {
-    u = this.findUser(splited[0]);
-    if (u) {
-        uid = u.uid;
-        nick = u.nick;
-        reason = data.split(':')[2];
-        this.emit('user_destroy', u.nick, reason, data);
-        delete u;
-        delete this.users[uid];
-    }   
+Protocol.prototype.executeNick = function (u, newNick) {
+    lastNick = u.nick;
+    u.nick = newNick;
+    this.emit('user_nick', u, lastNick);
 }
 
-Protocol.prototype.findServer = function (sid)
-{
-    if (sid.charAt(0) == ":") {
-        sid = sid.substring(1);
-    }
-    
-    return this.servers[sid];
-};
-
-Protocol.prototype.introduceUser = function (data, splited) {
-    
-    s = this.findServer(splited[0]);
-    
-    uid = splited[2];
-    
-    if ( this.users[uid] !== undefined) {
-        delete this.users[uid];
-    }
-    
-    realname = data.split(':')[2];
-    
-    var u = new user();
-    u.uid = splited[2];
-    u.time = parseInt(splited[3]);
-    u.nick = splited[4];
-    u.host = splited[5];
-    u.vhost = splited[6];
-    u.ident = splited[7];
-    u.ip = splited[8];
-    u.setMode(splited[10]);
-    u.realname = realname;
-    u.server = s;
-    
-    this.users[uid] = u;
-    
-    return u;
-
+Protocol.prototype.executeTopic = function (c, u, newTopic) {
+    lastTopic = c.topic;
+    c.topic = newTopic;
+    this.emit('channel_chg_topic', c, u, lastTopic);
 }
 
-Protocol.prototype.findChannel = function (name)
-{
-    if (name.charAt(0) == ":") {
-        name = name.substring(1);
+Protocol.prototype.executeUserAway = function (u, awayMsg) {
+    u.away = awayMsg;
+    if (awayMsg === undefined) {
+        this.emit('user_away_off', u);
+    } else {
+        this.emit('user_away_on', u, awayMsg);
     }
+}
 
-    if (this.channels[name] instanceof channel) {
-        return this.channels[name];  
-    }
+Protocol.prototype.channelJoin = function (u, c) {
+    u.addChannel(c);
+    this.emit('user_join', u, c);
+}
+
+Protocol.prototype.introduceChannel = function (name, uptime, modes) {
+    var c = new channel(name, uptime);
+    c.setMode(modes);
+
+    this.channels.push(c);
+    this.emit('channel_introduce', c);
     
-    return false;
-};
-
-Protocol.prototype.findUser = function (uid)
-{
-    
-    if (uid.charAt(0) == ":") {
-        uid = uid.substring(1);
-    }
-    
-    return this.findUserByUid(uid);
-};
-
-Protocol.prototype.findUserByUid = function (uid)
-{    
-    for (i in this.users)
-    {
-        if ((this.users[i].uid == uid) && (this.users[i] instanceof user))
-        {
-            return this.users[i];
-        }
-    }
-
-    return false;
-};
-
-
-
-Protocol.prototype.findUserByNick = function (nick)
-{    
-    for (i in this.users)
-    {
-        if (this.users[i].nick == nick)
-        {
-            return this.users[i];
-        }
-    }
-
-    return undefined;
-};
-
+    return c;
+}

@@ -1,51 +1,20 @@
 exports = module.exports = Channel;
 
-function Channel()
+function Channel(name, uptime)
 {
-	if (!(this instanceof Channel)) { return new Channel(); }
-    this.name = undefined;
-    this.time = undefined;
+	if (!(this instanceof Channel)) { return new Channel(name, uptime); }
+    this.name = name;
+    this.time = uptime;
+    
     this.modes = [];
-    this.ircd = undefined;
     this.topic = undefined;
+    this.index = 0;
+    this.countUsers = 0;
 }
 
 Channel.prototype.toString = function ()
 {
 	return this.name;
-}
-
-Channel.prototype.addUsers = function (cusers) {
-    var that = this;
-    
-    cusers.forEach(function(arg) {
-        split = arg.split(' ');
-        uid = split[0];
-        
-        if (uid.length == 9) {
-            u = that.ircd.users[uid];
-            if (u !== undefined) {
-                u.addChannel(that);
-                that.ircd.emit('user_join', u, that);
-            }
-        }
-    });
-}
-
-Channel.prototype.getUsers = function (cusers) {
-    var that = this;
-    users = this.ircd.users;
-    cusers = [];
-    
-    for (i in users)
-    {
-        if (users[i].channels[that.name] !== undefined)
-        {
-            cusers.push(users[i]);
-        }
-    }
-
-    return cusers;
 }
 
 Channel.prototype.setMode = function (modes)

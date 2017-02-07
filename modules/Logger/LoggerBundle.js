@@ -20,8 +20,8 @@ Logger.prototype.init = function() {
        bot.msg(mychan, u.nick + ' is introduce');
    });   
    
-   this.ircd.on('user_destroy', function (nick, reason) {
-       bot.msg(mychan, nick + ' is destroy => ' + reason);
+   this.ircd.on('user_destroy', function (u, reason) {
+       bot.msg(mychan, u.nick + ' is destroy => ' + reason);
    }); 
    
    this.ircd.on('server_introduce', function (s) {
@@ -33,7 +33,7 @@ Logger.prototype.init = function() {
    }); 
 
    this.ircd.on('user_join', function (u, c) {
-       bot.msg(mychan, u.nick + ' join ' + c.name);
+       bot.msg(mychan, u.nick + ' join ' + c.name + ' ('+c.countUsers+')');
    });
 
    this.ircd.on('user_part', function (u, c) {
@@ -63,6 +63,11 @@ Logger.prototype.init = function() {
    this.ircd.on('channel_chg_topic', function (c, u) {
        bot.msg(mychan, u.nick + ' chg topic => ' + c.name + ' >' + c.topic);
    });
+   
+   this.ircd.on('user_kick', function (u, target, c, reason) {
+       bot.msg(mychan, u.nick + ' kick => ' + target.nick + ' on ' + c.name + ' ==> ' + reason);
+   });
+    
 };
 
 module.exports = Logger;

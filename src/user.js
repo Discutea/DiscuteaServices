@@ -1,22 +1,27 @@
 exports = module.exports = User;
 
-function User()
-{
-    if (!(this instanceof User)) { return new User(); }
+var remove = require('unordered-array-remove');
 
-    this.uid = undefined;
-    this.time = undefined;
-    this.nick = undefined;
-    this.host = undefined;
-    this.vhost = undefined;
-    this.ident = undefined;
-    this.ip = undefined;
+function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
+{
+    if (!(this instanceof User)) { return new User(uid, nick, ident, host, vhost, ip, uptime, realname, s); }
+
+    this.uid = uid;
+    this.nick = nick;
+    this.ident = ident;
+    this.host = host;
+    this.vhost = vhost;
+    this.ip = ip;
+    this.time = uptime;
+    this.realname = realname;
+    this.server = s;
+    
     this.modes = [];
-    this.realname = undefined;
-    this.server = undefined;
     this.channels = [];
     this.away = undefined;
     this.lastnicks = [];
+    
+    this.index = 0;
 }
 
 User.prototype.toString = function ()
@@ -55,17 +60,20 @@ User.prototype.addMode = function (mode)
 User.prototype.addChannel = function (c)
 {
     if (this.channels[c.name] === undefined) {
-        this.channels[c.name] = c;
+        this.channels.push(c);
+        c.countUsers++;
     }
 }
 
 User.prototype.removeChannel = function (c)
 {
-    for (i in this.channels)
+    var that = this;
+    for (i in that.channels)
     {
-        if (this.channels[i] === c)
+        if (that.channels[i] === c)
         {
-            delete this.channels[i];
+            remove(that.channels, i);
+            c.countUsers--;
         }
     }
 }

@@ -108,7 +108,6 @@ Protocol.prototype.findBy = function (array, criteria, target)
 };
 
 Protocol.prototype.executeChannelMode = function (c, by, time, type, target, add) {
-    
     if (add) {
         var ext = new extchannel(by, time, type, target, add);
         index = c.extsModes.push(ext);
@@ -119,16 +118,12 @@ Protocol.prototype.executeChannelMode = function (c, by, time, type, target, add
         var that = this;
         c.extsModes.forEach(function(ext) {
             if ( (ext.target === target) && (ext.type === type) ) {
-                id = ext.index; 
-                console.log(ext);
+                id = ext.index;
                 remove(c.extsModes, id);
                 delete ext;
                 that.emit('del_ext_channel_mode', c, type, target, by);
             }
-            console.log(ext);
         });
-
-       // console.log('DELETE: ' + c.name + ' by: ' + by + ' mode: ' + type + ' target: ' + target );
     }
 }
 
@@ -243,6 +238,7 @@ Protocol.prototype.executeUserAway = function (u, awayMsg) {
 }
 
 Protocol.prototype.channelJoin = function (u, c) {
+    
     if ( (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}
     
     u.addChannel(c);

@@ -36,7 +36,6 @@ Ircd.prototype.run = function () {
 Ircd.prototype.dispatcher = function (data) {
     splited = data.split(' ');
     splited2 = data.split(':');
-
     switch (splited[1]) {
         case 'PING':
             this.send('PONG', this.sid, splited[2]);
@@ -53,6 +52,9 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'SERVER':
             this.processIntroduceServer(splited, splited2);
+            break;
+        case 'JOIN':
+            this.processChannelJoin(splited, splited2);
             break;
         case 'FJOIN':
             this.processChannelJoin(splited, splited2);
@@ -77,6 +79,9 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'FNAME':
             this.processRealname(splited, splited2);
+            break;
+        case 'MODE':
+            this.processMode(splited, splited2);
             break;
         case 'FMODE':
             this.processFmode(splited, splited2);
@@ -113,10 +118,26 @@ Ircd.prototype.processTopic = function (splited, splited2) {
     }
 }
 
-Ircd.prototype.processFmode = function (splited, splited2) {
+Ircd.prototype.processMode = function (splited, splited2) {
+    u = this.findUser(splited[2]);
     
+    //:52FAAAE38,MODE,52FAAAE38,:-R
+    
+    if (!(u instanceof user)) {
+        console.log('MODE ==> ' + splited);
+        return;
+    }
+    
+    u.setMode(splited2[2]);
+}
+
+Ircd.prototype.processFmode = function (splited, splited2) {    
     c = this.findChannel(splited[2]);
     if (!(c instanceof channel)) {return;}
+    
+    if (splited[5] === undefined) {
+        return c.setMode(splited2[2]);
+    }
     
     var by = "--";
     
@@ -250,6 +271,7 @@ Ircd.prototype.processDestroyUser = function (splited, splited2) {
 
 Ircd.prototype.processChannelJoin = function (splited, splited2) {
     var that = this;
+
     var c = this.findChannel(splited[2]);
     
     if (!(c instanceof channel)) {
@@ -260,18 +282,24 @@ Ircd.prototype.processChannelJoin = function (splited, splited2) {
         c = this.introduceChannel(name, uptime, modes);
     }
     
-    cusers = splited2[2].split(',');
-
-    cusers.forEach(function(arg) {
-        split = arg.split(' ');
-        uid = split[0];
-        if (uid.length == 9) {
-            u = that.findUser(uid);
-            if (u instanceof user) {
-                that.channelJoin(u, c);
-            }
+    if (splited[1] === 'JOIN') {
+        u = that.findUser(splited[0]);
+        if (u instanceof user) {
+            that.channelJoin(u, c);
         }
-    });
+    } else {
+        cusers = splited2[2].split(',');
+        cusers.forEach(function(arg) {
+            split = arg.split(' ');
+            uid = split[0];
+            if (uid.length == 9) {
+                u = that.findUser(uid);
+                if (u instanceof user) {
+                    that.channelJoin(u, c);
+                }
+            }
+        });
+    }
 }
 
 Ircd.prototype.processIntroduceServer = function (splited, splited2) {

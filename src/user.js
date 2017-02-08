@@ -62,18 +62,18 @@ User.prototype.setMode = function (modes)
 {
     if ((typeof modes == 'string') && (modes.length >= 1)) {
         var that = this;
-        addModes = modes.split('+')[1];
-        delModes = modes.split('-')[1];
-
-        if (addModes !== undefined){
-            for (var i = 0; i < addModes.length; i++) {
-                that.addMode(addModes[i]);
-            }
-        }
-
-        if (delModes !== undefined){
-            for (var i = 0; i < delModes.length; i++) {
-                that.delMode(delModes[i]);
+        var addmode = true;
+        for (i in modes) {
+            if (modes[i] === '+') {
+                addmode = true;
+            } else if (modes[i] === '-') {
+                addmode = false;
+            } else {
+                if (addmode) {
+                    that.addMode(modes[i]);
+                } else {
+                    that.delMode(modes[i]);
+                }
             }
         }
     }
@@ -114,7 +114,7 @@ User.prototype.delMode = function (mode)
 {
     for (i in this.modes)
     {
-        if (this.modes[i] == mode)
+        if (this.modes[i] === mode)
         {
             remove(this.modes, i);
         }

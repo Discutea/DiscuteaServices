@@ -1,8 +1,11 @@
-exports.Bot = Bot;
+exports = module.exports = Bot;
+
 var ip = require("ip");
 
 function Bot(uid, vhost, nick, ident, modes, realname)
 {
+    if (!(this instanceof Bot)) { return new Bot(uid, vhost, nick, ident, modes, realname); }
+    
     this.ip = ip.address();
     this.ident = ident;
     this.realname = realname;

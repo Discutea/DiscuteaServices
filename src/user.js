@@ -1,5 +1,6 @@
 exports = module.exports = User;
 var remove = require('unordered-array-remove');
+var channel = require('./channel');
 
 function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
 {
@@ -24,6 +25,7 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.country = undefined;
     this.region = undefined;
     this.city = undefined;
+    this.version = undefined;
     this.index = 0;
 }
 
@@ -43,7 +45,12 @@ User.prototype.setGeoInfos = function (geo)
     if (city != ""){
         this.city = city;
     }
-
+    
+    if (city !== undefined) {
+        return true;
+    }
+    
+    return false;
 }
 
 User.prototype.toString = function ()
@@ -81,7 +88,7 @@ User.prototype.addMode = function (mode)
 
 User.prototype.addChannel = function (c)
 {
-    if (this.channels[c.name] === undefined) {
+    if (c instanceof channel) {
         this.channels.push(c);
         c.countUsers++;
     }
@@ -89,13 +96,16 @@ User.prototype.addChannel = function (c)
 
 User.prototype.removeChannel = function (c)
 {
-    var that = this;
-    for (i in that.channels)
-    {
-        if (that.channels[i] === c)
+    if (c instanceof channel) {
+        var that = this;
+    
+        for (i in that.channels)
         {
-            remove(that.channels, i);
-            c.countUsers--;
+            if (that.channels[i] === c)
+            {
+                remove(that.channels, i);
+                c.countUsers--;
+            }
         }
     }
 }

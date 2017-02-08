@@ -8,7 +8,10 @@ function Channel(name, uptime)
     this.time = uptime;
     
     this.modes = [];
-    this.topic = undefined;
+    this.extsModes = [];
+    this.topic = "";
+    this.topicBy = undefined;
+    this.topicAt = undefined;
     this.index = 0;
     this.countUsers = 0;
 }

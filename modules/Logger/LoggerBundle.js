@@ -7,16 +7,36 @@ function Logger(ircd) {
 Logger.prototype.init = function() {
     
    var mychan = '#Node.Js';
-    
-   var bot = new bobot.Bot( 'AAAAAA', 'NodeJs.Discutea.com', 'Logger', 'Discutea', '+IWBOiows +*', '-- X Bot' );
+
+   var bot = new bobot( 'AAAAAA', 'NodeJs.Discutea.com', 'Logger', 'Discutea', '+IWBOiows +*', '-- X Bot' );
    this.ircd.introduceBot( bot );
    bot.join(mychan);
+   
+   this.ircd.on('add_ext_channel_mode', function (c, ext) {
+       bot.msg(mychan, ext.by + ' add_ext_channel_mode in ' + c.name + ' type: ' + ext.type + ' target: ' + ext.target);
+   });
+  
+   this.ircd.on('del_ext_channel_mode', function (c, type, target, by) {
+       bot.msg(mychan, by + ' del_ext_channel_mode in ' + c.name + ' type: ' + type + ' target: ' + target);
+   });
    
    this.ircd.on('user_mode', function (u, modes) {
        bot.msg(mychan, u.nick + ' MODES ' + modes);
    });
 
-   this.ircd.on('user_introduce', function (u) {
+   this.ircd.on('user_change_realname', function (u, lastreal) {
+       bot.msg(mychan, u.nick + ' user_change_realname ' + lastreal + ' >> ' + u.realname);
+   });
+
+   this.ircd.on('channel_introduce_topic', function (c) {
+       bot.msg(mychan, c.topicBy + ' channel_introduce_topic ' + c.name + ' >> ' + c.topic);
+   });
+   
+   this.ircd.on('user_has_badreal', function (u, realname) {
+       bot.msg(mychan, u.nick + ' user_has_badreal ' + realname);
+   });
+   
+   this.ircd.on('user_has_geoinfos', function (u) {
        var geo = '';
        
        if (u.country !== undefined) {
@@ -31,12 +51,16 @@ Logger.prototype.init = function() {
           geo = geo + ' city: ' + u.city; 
        }
 
-       bot.msg(mychan, u.nick + ' is introduce ' + geo);
+       bot.msg(mychan, u.nick + ' user_has_geoinfos ' + geo);
 
+   });
+   
+   this.ircd.on('user_introduce', function (u) {
+       bot.msg(mychan, u.nick + ' is introduce');
    });   
    
-   this.ircd.on('user_destroy', function (u, reason) {
-       bot.msg(mychan, u.nick + ' is destroy => ' + reason);
+   this.ircd.on('user_destroy', function (nick, reason) {
+       bot.msg(mychan, nick + ' is destroy => ' + reason);
    }); 
    
    this.ircd.on('server_introduce', function (s) {
@@ -59,8 +83,8 @@ Logger.prototype.init = function() {
        bot.msg(mychan, name + ' channel is destroy');
    }); 
 
-   this.ircd.on('server_destroy', function (name) {
-       bot.msg(mychan, name + ' server is destroy');
+   this.ircd.on('server_destroy', function (name, reason) {
+       bot.msg(mychan, name + ' server is destroy >> ' + reason);
    });
 
    this.ircd.on('user_away_off', function (u) {

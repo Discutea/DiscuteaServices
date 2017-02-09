@@ -10,8 +10,9 @@ ircd.socket.on('connect', function () {
             path = __dirname + '/../modules/' + moduleName;
             var files = Finder.from(path).findFiles('*Bundle.js');
             if (files.length === 1) {
+                modconf = config.modules.config[moduleName];
                 mod = require(files[0]);
-                m = new mod(ircd);
+                m = new mod(ircd, modconf);
                 m.init();
             }
         });

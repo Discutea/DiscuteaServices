@@ -12,7 +12,20 @@ var conf = {
         loader: [
             'Logger'
         ],
-    }
+        config: {
+            Logger: {
+                bot: {
+                    uid:      'AAAAAA',
+                    vhost:    'NodeJs.Discutea.com',
+                    nick:     'LogServ',
+                    ident:    'Discutea',
+                    modes:    '+IWBOiows +*',
+                    realname: '-- X Bot'
+                },
+                channel: '#Node.Js'
+            }
+        }
+    },
     /*
      * Require IRCv3 
      * The first params is accountname use by anope

@@ -1,14 +1,16 @@
 var bobot = require('../../src/bot');
 
-function Logger(ircd) {
+function Logger(ircd, conf) {
     this.ircd = ircd;
+    this.conf = conf;
 };
 
 Logger.prototype.init = function() {
     
-   var mychan = '#Node.Js';
-
-   var bot = new bobot( 'AAAAAA', 'NodeJs.Discutea.com', 'Logger', 'Discutea', '+IWBOiows +*', '-- X Bot' );
+   var mychan = this.conf.channel;
+   var botconf = this.conf.bot;
+   
+   var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
    this.ircd.introduceBot( bot );
    bot.join(mychan);
    

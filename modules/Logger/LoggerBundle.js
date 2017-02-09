@@ -14,6 +14,14 @@ Logger.prototype.init = function() {
     this.ircd.introduceBot( bot );
     bot.join(mychan);
 
+    this.ircd.on('del_xline', function (delby, type, line, name) {
+        bot.msg(mychan, '\00304\002(' + name + ')\002\00314 ' + delby + ' supprime ' + line + '\003 ');
+    });
+    
+    this.ircd.on('add_xline', function (x) {
+        bot.msg(mychan, '\00304\002(' + x.name() + ')\002\00314 ' + x.addby + ' ajoute ' + x.addr + ' :' + x.reason + '\003 ');
+    });
+
     this.ircd.on('user_opertype', function (u, type) {
         bot.msg(mychan, '\00304\002(Oper)\002\00314 ' + u.nick + ' ' + type + '\003 ');
     });

@@ -5,6 +5,7 @@ var user = require('../user');
 var server = require('../server');
 var channel = require('../channel');
 var extchannel = require('../extchannel');
+var xline = require('../xline');
 var net  = require('net');
 var tls  = require('tls');
 var find = require('array-find');
@@ -14,6 +15,7 @@ var geoip = require('geoip-lite');
 function Protocol(cfg) {
     this.users = [];
     this.servers = [];
+    this.xlines = [];
     this.channels = [];
     this.extsChannel = [];
     this.socket = this.connect(cfg.link.port, cfg.link.server);
@@ -127,6 +129,33 @@ Protocol.prototype.findBy = function (array, criteria, target)
     });
 };
 
+Protocol.prototype.introduceXline = function (type, addr, addby, addat, expireat, reason) {
+    var x = new xline(type, addr, addby, addat, expireat, reason);
+    index = this.xlines.push(x);
+    x.index = index;
+
+    this.emit('add_xline', x);
+};
+
+Protocol.prototype.destroyXline = function (delby, type, line) {
+    x = this.findXline(type, line);
+    if (x instanceof xline) {
+        name = x.name();
+        remove(this.xlines, x.index);
+        delete x;
+        this.emit('del_xline', delby, type, line, name);
+    }
+};
+
+Protocol.prototype.findXline = function (type, line) {
+    return find(this.xlines, function (x) {
+        if ( (x.type === type) && (x.addr == line) )
+        {
+            return x;
+        }
+    });
+};
+
 Protocol.prototype.executeChannelMode = function (c, by, time, type, target, add) {
     if (add) {
         var ext = new extchannel(by, time, type, target, add);
@@ -209,6 +238,8 @@ Protocol.prototype.executeKick = function (u, target, c, reason) {
         this.destroyChannel(c);
     }
 }
+
+
 
 Protocol.prototype.destroyChannel = function (c) {
     if (!(c instanceof channel)) {return;}

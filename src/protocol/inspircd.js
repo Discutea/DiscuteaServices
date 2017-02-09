@@ -124,13 +124,57 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'PRIVMSG':
             this.emit('privmsg', data);
-            break;            
+            break;
+        case 'ADDLINE':
+            this.processAddline(splited, splited2);
+            break;
+        case 'DELLINE':
+            this.processDelline(splited, splited2);
+            break;
         default:
            // console.log(data);
             break;
+    }    
+};
+
+Ircd.prototype.processDelline = function (splited, splited2) {
+    delby = '--';
+    u = this.findUser(splited[0]);
+    if (u instanceof user) { 
+        delby = u.nick; 
+    } else {
+        s = this.findServer(splited[0]);
+        if (s instanceof server) { 
+            delby = s.name; 
+        }
     }
     
-};
+    type = splited[2];
+    line = splited[3];
+    this.destroyXline(delby, type, line);
+}
+
+Ircd.prototype.processAddline = function (splited, splited2) {
+
+    addby = splited[4];
+    u = this.findUser(splited[0]);
+    
+    if (u instanceof user) { 
+        if (u.account) {
+            addby = u.account;
+        } else {
+           addby = u.nick; 
+        }
+    }
+
+    type = splited[2];
+    addr = splited[3];
+    addat = splited[5];
+    expireat = splited[6];
+    reason = splited2[2];
+    
+    this.introduceXline(type, addr, addby, addat, expireat, reason);
+}
 
 Ircd.prototype.processVersion = function (splited, splited2) {
     s = this.findServer(splited[0]);

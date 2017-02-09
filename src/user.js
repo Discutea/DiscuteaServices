@@ -1,6 +1,7 @@
 exports = module.exports = User;
 var remove = require('unordered-array-remove');
 var channel = require('./channel');
+var events = require('events');
 
 function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
 {
@@ -26,8 +27,12 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.region = undefined;
     this.city = undefined;
     this.version = undefined;
+    this.role = false;
     this.index = 0;
+    events.EventEmitter.call(this);
 }
+
+User.prototype = Object.create(events.EventEmitter.prototype);
 
 User.prototype.setGeoInfos = function (geo)
 {
@@ -61,8 +66,11 @@ User.prototype.toString = function ()
 User.prototype.setMode = function (modes)
 {
     if ((typeof modes == 'string') && (modes.length >= 1)) {
+        var add = [];
+        var del = [];
         var that = this;
         var addmode = true;
+        
         for (i in modes) {
             if (modes[i] === '+') {
                 addmode = true;
@@ -70,20 +78,32 @@ User.prototype.setMode = function (modes)
                 addmode = false;
             } else {
                 if (addmode) {
-                    that.addMode(modes[i]);
+                    a = that.addMode(modes[i]);
+                    if (a) {
+                        add.push(a);
+                    }
                 } else {
-                    that.delMode(modes[i]);
+                    d = that.delMode(modes[i]);
+                    if (d) {
+                        del.push(d);
+                    }
                 }
             }
         }
+        return {add: add, del: del};
     }
+    return false;
 }
 
 User.prototype.addMode = function (mode)
 {
+    
     if (this.hasMode(mode) === false) {
         this.modes.push(mode);
+        return mode;
     }
+    
+    return false;
 }
 
 User.prototype.addChannel = function (c)
@@ -117,8 +137,10 @@ User.prototype.delMode = function (mode)
         if (this.modes[i] === mode)
         {
             remove(this.modes, i);
+            return mode;
         }
     }
+    return false;
 }
 
 User.prototype.hasMode = function(mode) {
@@ -128,6 +150,61 @@ User.prototype.hasMode = function(mode) {
         {
             return true;
         }
+    }
+    return false;
+}
+
+
+User.prototype.isRoot = function() {
+    if (this.role === 'ROOT') {
+        return true;
+    }
+    return false;
+}
+
+User.prototype.isAdmin = function() {
+    if (!this.role) {return false;}
+    
+    if ((this.role === 'ADMIN') || (this.role === 'ROOT')) {
+        return true;
+    }
+    
+    return false;
+}
+
+User.prototype.isOperator = function() {
+    if (!this.role) {return false;}
+    
+    if ((this.role === 'OPERATOR') || (this.role === 'ADMIN') || (this.role === 'ROOT')) {
+        return true;
+    }
+    
+    return false;
+}
+
+User.prototype.isModerator = function() {
+    if (!this.role) {return false;}
+    
+    if ((this.role === 'MODERATOR') || (this.role === 'OPERATOR')) {
+        return true;
+    }
+    
+    if ((this.role === 'ADMIN') || (this.role === 'ROOT')) {
+        return true;
+    }
+    
+    return false;
+}
+
+User.prototype.isHelper = function() {
+    if (!this.role) {return false;}
+    
+    if ((this.role === 'HELPEUR') || (this.role === 'MODERATOR') || (this.role === 'OPERATOR')) {
+        return true;
+    }
+    
+    if ((this.role === 'ADMIN') || (this.role === 'ROOT')) {
+        return true;
     }
     
     return false;

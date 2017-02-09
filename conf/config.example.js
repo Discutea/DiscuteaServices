@@ -13,6 +13,22 @@ var conf = {
             'Logger'
         ],
     }
+    /*
+     * Require IRCv3 
+     * The first params is accountname use by anope
+     * The second params is the role
+     * roles list: ROOT, ADMIN, OPERATOR, MODERATOR, HELPEUR
+     *
+     * /!\ CASE SENSITIVE /!\
+     *
+     */
+    opers: { 
+        Strategy:   'ROOT',
+        capuci:     'ADMIN',
+        Minsy:      'OPERATOR',
+        melba:      'MODERATOR',
+        Ginette:    'HELPEUR'
+    }
 };
 
 module.exports = conf;

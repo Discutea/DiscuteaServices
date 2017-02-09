@@ -1,5 +1,6 @@
 exports = module.exports = Channel;
 var remove = require('unordered-array-remove');
+var events = require('events');
 
 function Channel(name, uptime)
 {
@@ -14,7 +15,10 @@ function Channel(name, uptime)
     this.topicAt = undefined;
     this.index = 0;
     this.countUsers = 0;
+    events.EventEmitter.call(this);
 }
+
+Channel.prototype = Object.create(events.EventEmitter.prototype);
 
 Channel.prototype.toString = function ()
 {
@@ -24,6 +28,8 @@ Channel.prototype.toString = function ()
 Channel.prototype.setMode = function (modes)
 {
     if ((typeof modes == 'string') && (modes.length >= 1)) {
+        var add = [];
+        var del = [];
         var that = this;
         var addmode = true;
         for (i in modes) {
@@ -33,20 +39,30 @@ Channel.prototype.setMode = function (modes)
                 addmode = false;
             } else {
                 if (addmode) {
-                    that.addMode(modes[i]);
+                    a = that.addMode(modes[i]);
+                    if (a) {
+                        add.push(a);
+                    }
                 } else {
-                    that.delMode(modes[i]);
+                    d = that.delMode(modes[i]);
+                    if (d) {
+                        del.push(d);
+                    }
                 }
             }
         }
+        return {add: add, del: del};
     }
+    return false;
 }
 
 Channel.prototype.addMode = function (mode)
 {
     if (this.hasMode(mode) === false) {
         this.modes.push(mode);
+        return mode;
     }
+    return false;
 }
 
 Channel.prototype.delMode = function (mode)
@@ -56,8 +72,10 @@ Channel.prototype.delMode = function (mode)
         if (this.modes[i] === mode)
         {
             remove(this.modes, i);
+            return mode;
         }
     }
+    return false;
 }
 
 Channel.prototype.hasMode = function(mode) {

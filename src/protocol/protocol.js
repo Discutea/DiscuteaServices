@@ -16,12 +16,13 @@ function Protocol(cfg) {
     this.servers = [];
     this.channels = [];
     this.extsChannel = [];
-    this.socket = this.connect(cfg.port, cfg.server);
-    this.sid = cfg.sid;
-    this.host = cfg.host;
-    this.password = cfg.password;
-    this.desc = cfg.desc;
+    this.socket = this.connect(cfg.link.port, cfg.link.server);
+    this.sid = cfg.link.sid;
+    this.host = cfg.link.host;
+    this.password = cfg.link.password;
+    this.desc = cfg.link.desc;
     this.uptime = Math.floor(Date.now() / 1000);
+    this.cfg = cfg;
     events.EventEmitter.call(this);
 }
 
@@ -66,7 +67,26 @@ Protocol.prototype.destroyServer = function (s, reason) {
     this.emit('server_destroy', name, reason);
 }
 
-/* INTRODUCE OBJECT (channel, server, user ...) */
+Protocol.prototype.emitMode = function (u, modes, t, intention) {
+    var that = this;
+    if ( (!(u instanceof user)) || (typeof modes !== 'object') )  {return;}
+    
+    if (modes.del) {
+        modes.del.forEach(function(mode) {
+            if ((t instanceof channel) || (t instanceof user)) {
+                that.emit(intention + '_del_mode', u, mode, t);
+            } 
+        });
+    }
+
+    if (modes.add) {
+        modes.add.forEach(function(mode) {
+            if ((t instanceof channel) || (t instanceof user)) {
+                that.emit(intention + '_add_mode', u, mode, t);
+            }
+        });
+    }
+}
 
 Protocol.prototype.introduceServer = function (sid, name, desc) {
     var s = new server(sid, name, desc);
@@ -78,7 +98,7 @@ Protocol.prototype.introduceServer = function (sid, name, desc) {
 
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
     var u = new user(uid, nick, ident, host, vhost, ip, uptime, realname, s);
-    u.setMode(modes);
+    var change = u.setMode(modes);
     this.users.push(u);
     this.emit('user_introduce', u);
 
@@ -149,18 +169,18 @@ Protocol.prototype.verifyRealname = function (u, realname) {
             }
         }
     }
-    
-    var regex = /^[0-9-]{2}[[:space:]][mMHhfFwWCcX][[:space:]][[:print:]]{2,47}$/;
-    if (regex.test(realname)) {
+
+    var regex = /^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/;
+    if (!regex.test(realname)) {
         this.emit('user_has_badreal', u, realname);
     }
 }
 
-Protocol.prototype.executeChannelPart = function (c, u) {
+Protocol.prototype.executeChannelPart = function (c, u, partMsg) {
     if ( (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}
     
     u.removeChannel(c);
-    this.emit('user_part', u, c);
+    this.emit('user_part', u, c, partMsg);
     
     if (c.countUsers <= 0)
     {
@@ -261,10 +281,17 @@ Protocol.prototype.processIRCv3AccountName = function (u, account) {
     if (account.length > 0) {
         u.account = account;
         u.registered = true;
-        this.emit('user_accountname', u, account);  
+        this.emit('user_accountname', u, account);
+
+        role = this.cfg.opers[account];
+        if (role !== undefined) {
+            u.role = role;
+            this.emit('user_has_role', u, role);
+        }
     } else {
         u.account = undefined;
         u.registered = false;
+        u.role = false;
         this.emit('user_accountname_off', u); 
     }
 }

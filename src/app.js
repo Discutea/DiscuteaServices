@@ -2,7 +2,7 @@ var config = require('../conf/config');
 var protocol = require("./protocol/"+config.link.protocol);
 var Finder = require('fs-finder');
 
-var ircd = new protocol.Ircd(config.link);
+var ircd = new protocol.Ircd(config);
 ircd.socket.on('connect', function () {
     ircd.on('ircd_ready', function () {
         mods = config.modules.loader;

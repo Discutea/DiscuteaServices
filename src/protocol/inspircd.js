@@ -120,15 +120,16 @@ Ircd.prototype.processTopic = function (splited, splited2) {
 
 Ircd.prototype.processMode = function (splited, splited2) {
     u = this.findUser(splited[2]);
+    if (!(u instanceof user)) {return;}
     
-    //:52FAAAE38,MODE,52FAAAE38,:-R
+    change = u.setMode(splited2[2]);
     
-    if (!(u instanceof user)) {
-        console.log('MODE ==> ' + splited);
-        return;
+    t = this.findUser(splited[0]);
+    if (!(t instanceof user)) {return;}
+    
+    if (change) {
+        this.emitMode(u, change, t, 'user');
     }
-    
-    u.setMode(splited2[2]);
 }
 
 Ircd.prototype.processFmode = function (splited, splited2) {    
@@ -136,7 +137,12 @@ Ircd.prototype.processFmode = function (splited, splited2) {
     if (!(c instanceof channel)) {return;}
     
     if (splited[5] === undefined) {
-        return c.setMode(splited2[2]);
+        change = c.setMode(splited2[2]);
+        if (change) {
+            u = this.findUser(splited[0]);
+            if (!(u instanceof user)) {return;}
+            return this.emitMode(u, change, c, 'channel');
+        }
     }
     
     var by = "--";
@@ -230,7 +236,8 @@ Ircd.prototype.processChannelPart = function (splited, splited2) {
     c = this.findChannel(splited[2]);
    
     if ((u instanceof user) && (c instanceof channel)) {
-        this.executeChannelPart(c, u);
+        partMsg = splited2[2];
+        this.executeChannelPart(c, u, partMsg);
     }
 }
 

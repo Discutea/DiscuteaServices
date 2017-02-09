@@ -8,6 +8,22 @@ var conf = {
         desc: "Sample IRC service with NodeJs for discutea.com",
         host: "node.discutea.com"
     },
+    /*
+     * Require IRCv3 
+     * The first params is accountname use by anope
+     * The second params is the role
+     * roles list: ROOT, ADMIN, OPERATOR, MODERATOR, HELPEUR
+     *
+     * /!\ CASE SENSITIVE /!\
+     *
+     */
+    opers: { 
+        Strategy:   'ROOT',
+        capuci:     'ADMIN',
+        Minsy:      'OPERATOR',
+        melba:      'MODERATOR',
+        Ginette:    'HELPEUR'
+    },
     modules: {
         loader: [
             'Logger'
@@ -25,22 +41,6 @@ var conf = {
                 channel: '#Node.Js'
             }
         }
-    },
-    /*
-     * Require IRCv3 
-     * The first params is accountname use by anope
-     * The second params is the role
-     * roles list: ROOT, ADMIN, OPERATOR, MODERATOR, HELPEUR
-     *
-     * /!\ CASE SENSITIVE /!\
-     *
-     */
-    opers: { 
-        Strategy:   'ROOT',
-        capuci:     'ADMIN',
-        Minsy:      'OPERATOR',
-        melba:      'MODERATOR',
-        Ginette:    'HELPEUR'
     }
 };
 

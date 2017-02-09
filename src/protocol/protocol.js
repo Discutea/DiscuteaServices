@@ -246,6 +246,32 @@ Protocol.prototype.executeTopic = function (c, u, newTopic) {
     this.emit('channel_chg_topic', c, u, lastTopic);
 }
 
+Protocol.prototype.executeOpertype = function (u, type) {
+    if (!(u instanceof user)) {return;}
+    
+    u.opertype = type;
+    this.emit('user_opertype', u, type);
+}
+
+Protocol.prototype.emitOperquit = function (u, type, reason) {
+    if (!(u instanceof user)) {return;}
+    this.emit('user_operquit', u, type, reason);
+}
+
+Protocol.prototype.executeFhost = function (u, vhost) {
+    if (!(u instanceof user)) {return;}
+    
+    u.vhost = vhost;
+    this.emit('user_chg_vhost', u, vhost);
+}
+
+Protocol.prototype.executeServerVersion = function (s, version) {
+    if (!(s instanceof server)) {return;}
+    
+    s.version = version;
+    this.emit('server_version', s, version);
+}
+
 Protocol.prototype.executeUserAway = function (u, awayMsg) {
     if (!(u instanceof user)) {return;}
     

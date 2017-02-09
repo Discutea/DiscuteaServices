@@ -27,6 +27,7 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.region = undefined;
     this.city = undefined;
     this.version = undefined;
+    this.opertype = undefined;
     this.role = false;
     this.index = 0;
     events.EventEmitter.call(this);

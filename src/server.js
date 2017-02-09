@@ -7,6 +7,7 @@ function Server(sid, name, desc)
     this.sid = sid;
     this.name = name;
     this.desc = desc;
+    this.version = undefined;
     this.index = 0;
 }
 

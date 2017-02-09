@@ -7,13 +7,25 @@ function Logger(ircd, conf) {
 
 Logger.prototype.init = function() {
     
-   var mychan = this.conf.channel;
-   var botconf = this.conf.bot;
+    var mychan = this.conf.channel;
+    var botconf = this.conf.bot;
    
-   var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
-   this.ircd.introduceBot( bot );
-   bot.join(mychan);
-   
+    var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
+    this.ircd.introduceBot( bot );
+    bot.join(mychan);
+
+    this.ircd.on('user_opertype', function (u, type) {
+        bot.msg(mychan, '\00304\002(Oper)\002\00314 ' + u.nick + ' ' + type + '\003 ');
+    });
+    
+    this.ircd.on('user_operquit', function (u, type, reason) {
+        bot.msg(mychan, '\00304\002(' + type + ')\002\00314 ' + u.nick + '\003 ' + reason);
+    });
+    
+    this.ircd.on('user_chg_vhost', function (u, vhost) {
+        bot.msg(mychan, '\00310(\002Vhost\002)\00314 ' + u.nick + ' change de vhost en ' + vhost + '\003');
+    });
+    
     this.ircd.on('user_has_role', function (u, role) {
         bot.msg(mychan, '\00304(\002Role\002)\00314 ' + u.nick + ' a maintenant le role ' + u.role + '\003');
     });

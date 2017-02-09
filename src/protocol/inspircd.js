@@ -86,6 +86,9 @@ Ircd.prototype.dispatcher = function (data) {
         case 'FMODE':
             this.processFmode(splited, splited2);
             break;
+        case 'FHOST':
+            this.processFhost(splited, splited2);
+            break;
         case 'END':
             if (splited[0] == 'CAPAB') {
                 this.emit('ircd_ready', data);
@@ -98,15 +101,67 @@ Ircd.prototype.dispatcher = function (data) {
         case 'METADATA':
             this.processIRCv3(splited, splited2, data);
             break;
+        case 'OPERQUIT':
+            this.processOperquit(splited, splited2);
+            break;
+        case 'OPERTYPE':
+            this.processOpertype(splited);
+            break;
+        case 'VERSION':
+            this.processVersion(splited, splited2);
+            break;
+        case 'SVSHOLD':
+            this.emit('SVSHOLD', data);
+            break;
+        case 'SNOTICE':
+            this.emit('SNOTICE', data);
+            break;
+        case 'SNONOTICE':
+            this.emit('SNONOTICE', data);
+            break;
+        case 'NOTICE':
+            this.emit('NOTICE', data);
+            break;
         case 'PRIVMSG':
             this.emit('privmsg', data);
-            break;
+            break;            
         default:
            // console.log(data);
             break;
     }
     
 };
+
+Ircd.prototype.processVersion = function (splited, splited2) {
+    s = this.findServer(splited[0]);
+    if (s instanceof server) {
+        version = splited[2];
+        
+        if ( (typeof version === 'string') && (version.charAt(0) == ":") ) {
+            version = version.substring(1);
+        }
+        this.executeServerVersion(s, version);
+    }
+}
+
+Ircd.prototype.processOpertype = function (splited) {
+    u = this.findUser(splited[0]);
+
+    if (u instanceof user) {
+        type = splited[2];
+        this.executeOpertype(u, type);
+    }
+}
+
+Ircd.prototype.processOperquit = function (splited, splited2) {
+    u = this.findUser(splited[0]);
+
+    if (u instanceof user) {
+        type = splited2[2];
+        reason = splited2[3];
+        this.emitOperquit(u, type, reason);
+    }
+}
 
 Ircd.prototype.processTopic = function (splited, splited2) {
     u = this.findUser(splited[0]);
@@ -130,6 +185,14 @@ Ircd.prototype.processMode = function (splited, splited2) {
     if (change) {
         this.emitMode(u, change, t, 'user');
     }
+}
+
+Ircd.prototype.processFhost = function (splited, splited2) {    
+    u = this.findUser(splited[0]);
+    if (!(u instanceof user)) {return;}
+    
+    vhost = splited2[2];
+    this.executeFhost(u, vhost);
 }
 
 Ircd.prototype.processFmode = function (splited, splited2) {    

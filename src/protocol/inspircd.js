@@ -5,6 +5,7 @@ var channel = require('../channel');
 var user = require('../user');
 var server = require('../server');
 var bot = require('../bot');
+var filter = require('../filter');
 
 function Ircd(sock, cfg) {
 
@@ -101,7 +102,7 @@ Ircd.prototype.dispatcher = function (data) {
             this.processFhost(splited, splited2);
             break;
         case 'FILTER':
-            console.log(data);
+            this.processDestroyFilter(splited);
             break;
         case 'METADATA':
             this.processIRCv3(splited, splited2, data);
@@ -482,7 +483,7 @@ Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
             }
             break;
         case 'filter':
-            this.processIRCv3Filter(splited, splited2);
+            this.processIRCv3Filter(splited);
             break;
         default:
            // console.log(data);
@@ -490,3 +491,41 @@ Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
     }
 }
 
+Ircd.prototype.processDestroyFilter = function (splited) {
+    regex = splited[2];
+    console.log(regex);
+        
+    var by = '-';
+    u = this.findUser(splited[0]);
+    if (u instanceof user) {
+        by = u.nick;
+    } else {
+        s = this.findServer(splited[0]);
+        if (s instanceof server) {
+            by = s.name;
+        }
+    }
+
+    if (splited[3] === undefined) {
+
+        f = this.findBy(this.filters, 'regex', regex);
+        if (!(f instanceof filter)) {return;};
+
+        this.destroyFilter(f, by);
+    } else {
+        action = splited[3];
+        flags = splited[4];
+        duration = splited[5];
+        reason = splited.slice(6, +splited.length);
+    
+        if (typeof reason === 'object') {
+            reason = reason.join(' ');
+        }
+    
+        if ( (typeof reason === 'string') && (reason.charAt(0) == ":") ) {
+            reason = reason.substring(1);
+        }
+
+        this.introduceFilter(action, flags, regex, by, duration, reason);
+    }
+}

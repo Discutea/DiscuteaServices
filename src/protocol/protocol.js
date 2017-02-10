@@ -344,17 +344,7 @@ Protocol.prototype.processIRCv3AccountName = function (u, account) {
     }
 }
 
-Protocol.prototype.processIRCv3Filter = function (splited, splited2) {
-  /*
-:51R METADATA * filter :\[(:?|[[0-2][0-9]:)(:?[[0-5][0-9]:)(:?[0-5][0-9])\].+\[(:?|[[0-2][0-9]:)(:?[[0-5][0-9]:)(:?[0-5][0-9])\].+ block oPqpnc 0 :Blocked!
-:51R METADATA * filter :(chaat\.fr) gline oPqpnc 259200 :Spam.
-:51R METADATA * filter :(libertycoeur\.fr) gline oPqpnc 259200 :Spam.
-:51R METADATA * filter :http:\/\/kurou\.saqibsiddiqui\.com:86\/qmZhWq\/a2\.php?i=778879170&contact\.aspx?f=ohWFqvLk gline oPqpn 3600 :(Spam 6718539)
-:51R METADATA * filter :http:\/\/cutt\.us\/roomKamiliapv gline oPqpn 3600 :(Spam 376092)
-:51R METADATA * filter :cutt\.us\/roomKamiliapv gline oPqpn 3600 :(Spam 3805818)
-:51R METADATA * filter :prntscr\.com gline oPqpn 3600 :(Spam 94071)
-:51R METADATA * filter :http:\/\/adf\.ly\/1j gline oPqpn 3600 :(Spam 5542175)  
- */  
+Protocol.prototype.processIRCv3Filter = function (splited) {
     action = splited[5];
     flags = splited[6];
     regex = splited[4];
@@ -372,9 +362,25 @@ Protocol.prototype.processIRCv3Filter = function (splited, splited2) {
         reason = reason.substring(1);
     }
     
-    var f = new filter(action, flags, regex, "-", duration, reason);
+    this.introduceFilter(action, flags, regex, undefined, duration, reason);
+}
+
+Protocol.prototype.introduceFilter = function (action, flags, regex, addby, duration, reason) {
+    var f = new filter(action, flags, regex, addby, duration, reason);
     this.emit('filter_introduce', f);
     f.index = this.filters.push(f);
 
     return f;
+}
+
+Protocol.prototype.destroyFilter = function (f, by) {
+    if (!(f instanceof filter)) {return;}
+
+    regex = f.regex;
+    index = f.index;
+    
+    delete f;
+    remove(this.filters, index);
+    
+    this.emit('filter_destroy', regex, by);
 }

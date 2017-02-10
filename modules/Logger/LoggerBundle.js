@@ -14,6 +14,18 @@ Logger.prototype.init = function() {
     this.ircd.introduceBot( bot );
     bot.join(mychan);
 
+    this.ircd.on('filter_introduce', function (f) {
+        if (!f.addby) {
+            bot.msg(mychan, '\00304(SpamFilter)\00314 Le serveur ajoute ' + f.regex + '\003 ');
+        } else {
+            bot.msg(mychan, '\00304(SpamFilter)\00314 ' + f.addby + ' ajoute ' + f.regex + '\003 ');
+        }
+    });
+    
+    this.ircd.on('filter_destroy', function (regex, by) {
+        bot.msg(mychan, '\00304(SpamFilter)\00314 ' + by + ' suprime ' + regex + '\003 ');
+    });
+ 
     this.ircd.on('del_xline', function (delby, type, line, name) {
         bot.msg(mychan, '\00304\002(' + name + ')\002\00314 ' + delby + ' supprime ' + line + '\003 ');
     });

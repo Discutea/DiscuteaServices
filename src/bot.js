@@ -31,7 +31,7 @@ Bot.prototype.send = function(command) {
         args[args.length - 1] = ':' + args[args.length - 1];
     }
 
-    this.ircd.socket.write(args.join(' ') + '\r\n');
+    this.ircd.sock.conn.write(args.join(' ') + '\r\n');
 };
 
 Bot.prototype.join = function(channel) {

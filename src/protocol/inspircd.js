@@ -6,31 +6,33 @@ var user = require('../user');
 var server = require('../server');
 var bot = require('../bot');
 
-function Ircd(cfg) {
+function Ircd(sock, cfg) {
+
     var that = this;
-    protocol.Protocol.call(this, cfg);
-    this.socket.on('connect', function () {
-        that.run();
-    });
+    protocol.Protocol.call(this, sock, cfg);
+
+    that.run();
+
 }
 
 Ircd.prototype = Object.create(protocol.Protocol.prototype);
 
 Ircd.prototype.run = function () {
     var that = this;
-    that.write("CAPAB START 1202");
-    that.write("CAPAB CAPABILITIES :PROTOCOL=1202");
-    that.write("CAPAB END");
-    that.write('SERVER', this.host, this.password, '0', this.sid, ':' + this.desc);
+    that.sock.write("CAPAB START 1202");
+    that.sock.write("CAPAB CAPABILITIES :PROTOCOL=1202");
+    that.sock.write("CAPAB END");
+    that.sock.write("SERVER", this.host, this.password, '0', this.sid, ":" + this.desc);
     that.send('BURST', this.uptime);
     that.send('ENDBURST');
 
-    that.socket.on('data', function (data) {
+    that.sock.conn.on('data', function (data) {
         args = data.toString().split(/\n|\r/);
         args.forEach(function(arg) {
             that.dispatcher(arg);
         });
     });
+   
 }
 
 Ircd.prototype.dispatcher = function (data) {
@@ -40,6 +42,15 @@ Ircd.prototype.dispatcher = function (data) {
         case 'PING':
             this.send('PONG', this.sid, splited[2]);
             this.emit('ping', data);
+            break;
+        case 'END':
+            if (splited[0] == 'CAPAB') {
+                this.emit('ircd_ready', data);
+            }
+            break;
+        case 'ERROR':
+            this.emit('error', data);
+            console.log(data);
             break;
         case 'UID':
             this.processIntroduceUser(splited, splited2);
@@ -89,13 +100,7 @@ Ircd.prototype.dispatcher = function (data) {
         case 'FHOST':
             this.processFhost(splited, splited2);
             break;
-        case 'END':
-            if (splited[0] == 'CAPAB') {
-                this.emit('ircd_ready', data);
-            }
-            break;
-        case 'ERROR':
-            this.emit('error', data);
+        case 'FILTER':
             console.log(data);
             break;
         case 'METADATA':
@@ -449,7 +454,7 @@ Ircd.prototype.introduceBot = function (b) {
 Ircd.prototype.send = function() {
     var args = Array.prototype.slice.call(arguments);
     args.splice(0, 0, ':' + this.sid);
-    this.write(args);
+    this.sock.write(args);
 };
 
 Ircd.prototype.findUser = function (uid)
@@ -477,9 +482,11 @@ Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
             }
             break;
         case 'filter':
+            this.processIRCv3Filter(splited, splited2);
             break;
         default:
            // console.log(data);
             break;
     }
 }
+

@@ -6,7 +6,8 @@ var conf = {
         sid: "30Z",
         password: "my_link_password",
         desc: "Sample IRC service with NodeJs for discutea.com",
-        host: "node.discutea.com"
+        host: "node.discutea.com",
+        ssl: false
     },
     /*
      * Require IRCv3 

@@ -6,19 +6,23 @@ var server = require('../server');
 var channel = require('../channel');
 var extchannel = require('../extchannel');
 var xline = require('../xline');
-var net  = require('net');
+var filter = require('../filter');
 var tls  = require('tls');
 var find = require('array-find');
 var remove = require('unordered-array-remove');
 var geoip = require('geoip-lite');
-
-function Protocol(cfg) {
+var socket = require('../socket');
+    
+    
+function Protocol(sock, cfg) {
+ //   if (!(sock instanceof socket)) {return;}
     this.users = [];
     this.servers = [];
     this.xlines = [];
+    this.filters = [];
     this.channels = [];
     this.extsChannel = [];
-    this.socket = this.connect(cfg.link.port, cfg.link.server);
+    this.sock = sock;
     this.sid = cfg.link.sid;
     this.host = cfg.link.host;
     this.password = cfg.link.password;
@@ -29,19 +33,6 @@ function Protocol(cfg) {
 }
 
 Protocol.prototype = Object.create(events.EventEmitter.prototype);
-
-Protocol.prototype.connect = function (port, server) {
-    s = net.createConnection(port, server);
-    return s;
-}
-
-Protocol.prototype.write = function(args) { 
-    if (typeof args !== 'object') {
-        var args = Array.prototype.slice.call(arguments);
-    }
-
-    this.socket.write(args.join(' ') + '\r\n');
-};
 
 Protocol.prototype.destroyUser = function (u, reason) {
     if (!(u instanceof user)) {return;}
@@ -351,4 +342,39 @@ Protocol.prototype.processIRCv3AccountName = function (u, account) {
         u.role = false;
         this.emit('user_accountname_off', u); 
     }
+}
+
+Protocol.prototype.processIRCv3Filter = function (splited, splited2) {
+  /*
+:51R METADATA * filter :\[(:?|[[0-2][0-9]:)(:?[[0-5][0-9]:)(:?[0-5][0-9])\].+\[(:?|[[0-2][0-9]:)(:?[[0-5][0-9]:)(:?[0-5][0-9])\].+ block oPqpnc 0 :Blocked!
+:51R METADATA * filter :(chaat\.fr) gline oPqpnc 259200 :Spam.
+:51R METADATA * filter :(libertycoeur\.fr) gline oPqpnc 259200 :Spam.
+:51R METADATA * filter :http:\/\/kurou\.saqibsiddiqui\.com:86\/qmZhWq\/a2\.php?i=778879170&contact\.aspx?f=ohWFqvLk gline oPqpn 3600 :(Spam 6718539)
+:51R METADATA * filter :http:\/\/cutt\.us\/roomKamiliapv gline oPqpn 3600 :(Spam 376092)
+:51R METADATA * filter :cutt\.us\/roomKamiliapv gline oPqpn 3600 :(Spam 3805818)
+:51R METADATA * filter :prntscr\.com gline oPqpn 3600 :(Spam 94071)
+:51R METADATA * filter :http:\/\/adf\.ly\/1j gline oPqpn 3600 :(Spam 5542175)  
+ */  
+    action = splited[5];
+    flags = splited[6];
+    regex = splited[4];
+    if ( (typeof regex === 'string') && (regex.charAt(0) == ":") ) {
+        regex = regex.substring(1);
+    }
+    duration = splited[7];
+    reason = splited.slice(8, +splited.length);
+    
+    if (typeof reason === 'object') {
+        reason = reason.join(' ');
+    }
+    
+    if ( (typeof reason === 'string') && (reason.charAt(0) == ":") ) {
+        reason = reason.substring(1);
+    }
+    
+    var f = new filter(action, flags, regex, "-", duration, reason);
+    this.emit('filter_introduce', f);
+    f.index = this.filters.push(f);
+
+    return f;
 }

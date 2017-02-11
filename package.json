@@ -20,7 +20,8 @@
     "ip": "~1.1.4",
     "array-find": "~1.0.0",
     "unordered-array-remove": "1.0.2",
-    "geoip-lite": "1.1.9"
+    "geoip-lite": "1.1.9",
+    "fips": "0.1.2"
   },
   "engines": {
     "node": ">=0.10"

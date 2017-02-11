@@ -25,11 +25,32 @@ var conf = {
         melba:      'MODERATOR',
         Ginette:    'HELPEUR'
     },
+    realname: {
+        matchbadreal: true,
+        geolocalisation: 'badreal', // false || badreal || all
+        regex: {
+            full: /^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/,
+            age: /^[0-9-]{2}$/,
+            sex: /^[mMHhfFwWCcX]$/
+        }
+    },
     modules: {
         loader: [
+            'Discutea',
             'Logger'
         ],
         config: {
+            Discutea: {
+                bot: {
+                    uid:      'BBBBBB',
+                    vhost:    'NodeJs.Discutea.com',
+                    nick:     'NodeJs',
+                    ident:    'Discutea',
+                    modes:    '+IWBOiows +*',
+                    realname: '-- X Bot'
+                },
+                channel: '#Node.Js'
+            },
             Logger: {
                 bot: {
                     uid:      'AAAAAA',

@@ -2,6 +2,7 @@ exports = module.exports = User;
 var remove = require('unordered-array-remove');
 var channel = require('./channel');
 var events = require('events');
+var fips = require('fips');
 
 function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
 {
@@ -44,6 +45,9 @@ User.prototype.setGeoInfos = function (geo)
     
     region = geo ? geo.region : undefined;
     if (region != ""){
+        if (country != ""){
+            region = fips.longform(country+region);
+        }
         this.region = region;
     }
     
@@ -52,8 +56,12 @@ User.prototype.setGeoInfos = function (geo)
         this.city = city;
     }
     
-    if (city !== undefined) {
-        return true;
+    if (country !== undefined) {
+        if (region !== undefined) {
+           return region.split(' ')[0] + ' ' + country; 
+        } else {
+            return country;
+        }
     }
     
     return false;

@@ -95,13 +95,48 @@ Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, 
     this.users.push(u);
     this.emit('user_introduce', u);
 
-    isGeo = u.setGeoInfos( geoip.lookup(ip) );
+    geoinfos = u.setGeoInfos( geoip.lookup(ip) );
 
-    if (isGeo) {
+    if (geoinfos !== false) {
         this.emit('user_has_geoinfos', u);
     }
     
-    this.verifyRealname(u, realname);
+    intention = this.cfg.realname.geolocalisation;
+
+    if (intention === 'all') {
+        return this.forceBadRealname(u, realname, geoinfos, intention);
+    }
+    
+    badreal = this.verifyRealname(u, realname);
+    
+    if ( (badreal === true) && (intention !== false) ) {
+        this.forceBadRealname(u, realname, geoinfos, intention);
+    }
+}
+
+Protocol.prototype.forceBadRealname = function (u, realname, geoinfos, intention) {
+    if ( (intention !== 'badreal') && (intention !== 'all') ) {return;}
+    if (!(u instanceof user)) {return;}
+
+    if (!geoinfos) {
+        geoinfos = 'Inconnu';
+    }
+
+    exreal = realname.split(' ');
+    
+    rage = this.cfg.realname.regex.age;
+    rsex = this.cfg.realname.regex.sex;
+    var that = this;
+    var age = '--';
+    var sexe = ' X ';
+        
+    if (rage.test(exreal[0])) { age = exreal[0]; }
+    if (rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
+    
+    newreal = age + sexe + geoinfos;
+    newreal = newreal.replace(/\s\s+/g, ' ');
+    newreal = newreal.replace(':', '');
+    that.sock.write(':'+that.sid+' CHGNAME ' + u.uid + " :" + newreal);
 }
 
 Protocol.prototype.findBy = function (array, criteria, target)
@@ -174,27 +209,35 @@ Protocol.prototype.executeRealname = function (u, realname) {
     u.realname = realname;
     this.emit('user_change_realname', u, lastreal);
     this.verifyRealname(u, realname);
+
 }
 
 Protocol.prototype.verifyRealname = function (u, realname) {
     if (!(u instanceof user)) {return;}
     
     if (realname !== undefined) {
-        age = realname.split(' ');
-        age = parseInt(age[0]);
-        if ( (!isNaN(age)) && (age < 99) && (age > 9) ) {
-            u.age = age;
-            if (age <= 19) {
-                this.emit('user_is_mineur', u);
+        if (this.cfg.realname.matchminor === true) {
+            age = realname.split(' ');
+            age = parseInt(age[0]);
+            if ( (!isNaN(age)) && (age < 99) && (age > 9) ) {
+                u.age = age;
+                if (age <= parseInt(this.cfg.realname.minorage)) {
+                    this.emit('user_is_mineur', u);
+                }
             }
         }
     }
-
-    var regex = /^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/;
-    if (!regex.test(realname)) {
-        this.emit('user_has_badreal', u, realname);
+    
+    if (this.cfg.realname.matchbadreal === true) {
+        if (!this.cfg.realname.regex.full.test(realname)) {
+            this.emit('user_has_badreal', u, realname);
+            return true;
+        }
     }
+    
+    return false;
 }
+
 
 Protocol.prototype.executeChannelPart = function (c, u, partMsg) {
     if ( (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}

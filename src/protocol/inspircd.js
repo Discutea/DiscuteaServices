@@ -314,9 +314,13 @@ Ircd.prototype.parseFmode = function (c, by, time, modes) {
 }
 
 Ircd.prototype.processRealname = function (splited, splited2) {
-    u = this.findUser(splited[0]);
+    u = this.findUser(splited[0]);    
     if (u instanceof user) {
-        realname = splited2[2];
+        realname = splited.splice(2, splited.length).join(' ');
+    
+        if ( (typeof realname === 'string') && (realname.charAt(0) == ":") ) {
+            realname = realname.substring(1);
+        }
         this.executeRealname(u, realname);
     }
 }
@@ -439,9 +443,11 @@ Ircd.prototype.processIntroduceUser = function (splited, splited2) {
     vhost = splited[6];
     ip = splited[8];
     uptime = parseInt(splited[3]);
-    realname = splited2[2];
     modes = splited[10];
-    
+    // /!\ Ipv6 on split (:)
+    realname = splited.splice(10, splited.length).join(' ');
+    realname = realname.split(':')[1];
+
     this.introduceUser(uid, nick, ident, host, vhost, ip, uptime, realname, s, modes);
 }
 
@@ -493,7 +499,6 @@ Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
 
 Ircd.prototype.processDestroyFilter = function (splited) {
     regex = splited[2];
-    console.log(regex);
         
     var by = '-';
     u = this.findUser(splited[0]);

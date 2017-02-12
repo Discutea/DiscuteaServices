@@ -1,38 +1,86 @@
 exports.Protocol = Protocol;
 
-var events = require('events');
 var user = require('../user');
 var server = require('../server');
 var channel = require('../channel');
 var extchannel = require('../extchannel');
 var xline = require('../xline');
 var filter = require('../filter');
-var tls  = require('tls');
 var find = require('array-find');
 var remove = require('unordered-array-remove');
 var geoip = require('geoip-lite');
 var socket = require('../socket');
-    
-    
-function Protocol(sock, cfg) {
+
+function Protocol(sock, emitter, cfg) {
  //   if (!(sock instanceof socket)) {return;}
+    this.channels = []; 
     this.users = [];
-    this.servers = [];
     this.xlines = [];
     this.filters = [];
-    this.channels = [];
+    this.servers = [];
     this.extsChannel = [];
     this.sock = sock;
+    this.emitter = emitter;
     this.sid = cfg.link.sid;
     this.host = cfg.link.host;
     this.password = cfg.link.password;
     this.desc = cfg.link.desc;
     this.uptime = Math.floor(Date.now() / 1000);
     this.cfg = cfg;
-    events.EventEmitter.call(this);
 }
 
-Protocol.prototype = Object.create(events.EventEmitter.prototype);
+Protocol.prototype.destroyChannel = function (c) {
+    if (!(c instanceof channel)) {return;}
+    
+    c.extsModes.forEach(function(ext) {
+        id = ext.index; 
+        remove(c.extsModes, id);
+        delete ext;
+    });
+    
+    index = c.index;
+    name = c.name;
+    
+    delete c;
+    remove(this.channels, index);
+    this.emitter.emit('channel_destroy', name);
+}
+
+Protocol.prototype.introduceChannel = function (name, uptime, modes) {
+    var c = new channel(name, uptime);
+    c.setMode(modes);
+
+    this.channels.push(c);
+    this.emitter.emit('channel_introduce', c);
+    
+    return c;
+}
+
+Protocol.prototype.destroyServer = function (s, reason) {
+    if (!(s instanceof server)) {return;}
+    
+    name = s.name;
+    index = s.index;
+
+    delete s;
+    remove(this.servers, index);
+    this.emitter.emit('server_destroy', name, reason);
+}
+
+Protocol.prototype.executeServerVersion = function (s, version) {
+    if (!(s instanceof server)) {return;}
+    
+    s.version = version;
+    this.emitter.emit('server_version', s, version);
+}
+
+Protocol.prototype.introduceServer = function (sid, name, desc) {
+    var s = new server(sid, name, desc);
+    this.emitter.emit('server_introduce', s);
+    this.servers.push(s);
+
+    return s;
+}
 
 Protocol.prototype.destroyUser = function (u, reason) {
     if (!(u instanceof user)) {return;}
@@ -46,18 +94,7 @@ Protocol.prototype.destroyUser = function (u, reason) {
 
     delete u;
     remove(this.users, index);
-    this.emit('user_destroy', nick, reason);
-}
-
-Protocol.prototype.destroyServer = function (s, reason) {
-    if (!(s instanceof server)) {return;}
-    
-    name = s.name;
-    index = s.index;
-
-    delete s;
-    remove(this.servers, index);
-    this.emit('server_destroy', name, reason);
+    this.emitter.emit('user_destroy', nick, reason);
 }
 
 Protocol.prototype.emitMode = function (u, modes, t, intention) {
@@ -67,7 +104,7 @@ Protocol.prototype.emitMode = function (u, modes, t, intention) {
     if (modes.del) {
         modes.del.forEach(function(mode) {
             if ((t instanceof channel) || (t instanceof user)) {
-                that.emit(intention + '_del_mode', u, mode, t);
+                that.emitter.emit(intention + '_del_mode', u, mode, t);
             } 
         });
     }
@@ -75,30 +112,22 @@ Protocol.prototype.emitMode = function (u, modes, t, intention) {
     if (modes.add) {
         modes.add.forEach(function(mode) {
             if ((t instanceof channel) || (t instanceof user)) {
-                that.emit(intention + '_add_mode', u, mode, t);
+                that.emitter.emit(intention + '_add_mode', u, mode, t);
             }
         });
     }
-}
-
-Protocol.prototype.introduceServer = function (sid, name, desc) {
-    var s = new server(sid, name, desc);
-    this.emit('server_introduce', s);
-    this.servers.push(s);
-
-    return s;
 }
 
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
     var u = new user(uid, nick, ident, host, vhost, ip, uptime, realname, s);
     var change = u.setMode(modes);
     this.users.push(u);
-    this.emit('user_introduce', u);
+    this.emitter.emit('user_introduce', u);
 
     geoinfos = u.setGeoInfos( geoip.lookup(ip) );
 
     if (geoinfos !== false) {
-        this.emit('user_has_geoinfos', u);
+        this.emitter.emit('user_has_geoinfos', u);
     }
     
     intention = this.cfg.realname.geolocalisation;
@@ -160,7 +189,7 @@ Protocol.prototype.introduceXline = function (type, addr, addby, addat, expireat
     index = this.xlines.push(x);
     x.index = index;
 
-    this.emit('add_xline', x);
+    this.emitter.emit('add_xline', x);
 };
 
 Protocol.prototype.destroyXline = function (delby, type, line) {
@@ -169,7 +198,7 @@ Protocol.prototype.destroyXline = function (delby, type, line) {
         name = x.name();
         remove(this.xlines, x.index);
         delete x;
-        this.emit('del_xline', delby, type, line, name);
+        this.emitter.emit('del_xline', delby, type, line, name);
     }
 };
 
@@ -188,7 +217,7 @@ Protocol.prototype.executeChannelMode = function (c, by, time, type, target, add
         index = c.extsModes.push(ext);
         ext.index = index;
         
-        this.emit('add_ext_channel_mode', c, ext);
+        this.emitter.emit('add_ext_channel_mode', c, ext);
     } else {
         var that = this;
         c.extsModes.forEach(function(ext) {
@@ -196,7 +225,7 @@ Protocol.prototype.executeChannelMode = function (c, by, time, type, target, add
                 id = ext.index;
                 remove(c.extsModes, id);
                 delete ext;
-                that.emit('del_ext_channel_mode', c, type, target, by);
+                that.emitter.emit('del_ext_channel_mode', c, type, target, by);
             }
         });
     }
@@ -207,7 +236,7 @@ Protocol.prototype.executeRealname = function (u, realname) {
     
     lastreal = u.realname;
     u.realname = realname;
-    this.emit('user_change_realname', u, lastreal);
+    this.emitter.emit('user_change_realname', u, lastreal);
     this.verifyRealname(u, realname);
 
 }
@@ -222,7 +251,7 @@ Protocol.prototype.verifyRealname = function (u, realname) {
             if ( (!isNaN(age)) && (age < 99) && (age > 9) ) {
                 u.age = age;
                 if (age <= parseInt(this.cfg.realname.minorage)) {
-                    this.emit('user_is_mineur', u);
+                    this.emitter.emit('user_is_mineur', u);
                 }
             }
         }
@@ -230,7 +259,7 @@ Protocol.prototype.verifyRealname = function (u, realname) {
     
     if (this.cfg.realname.matchbadreal === true) {
         if (!this.cfg.realname.regex.full.test(realname)) {
-            this.emit('user_has_badreal', u, realname);
+            this.emitter.emit('user_has_badreal', u, realname);
             return true;
         }
     }
@@ -243,7 +272,7 @@ Protocol.prototype.executeChannelPart = function (c, u, partMsg) {
     if ( (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}
     
     u.removeChannel(c);
-    this.emit('user_part', u, c, partMsg);
+    this.emitter.emit('user_part', u, c, partMsg);
     
     if (c.countUsers <= 0)
     {
@@ -258,14 +287,14 @@ Protocol.prototype.executeIntroduceTopic = function (c, topicAt, topicBy, topic)
     c.topicBy = topicBy;
     c.topicAt = topicAt;
     
-    this.emit('channel_introduce_topic', c);
+    this.emitter.emit('channel_introduce_topic', c);
 }
 
 Protocol.prototype.executeKick = function (u, target, c, reason) {
     if ( (!(target instanceof user)) || (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}
     
     target.removeChannel(c);
-    this.emit('user_kick', u, target, c, reason);
+    this.emitter.emit('user_kick', u, target, c, reason);
     
     if (c.countUsers <= 0)
     {
@@ -273,31 +302,12 @@ Protocol.prototype.executeKick = function (u, target, c, reason) {
     }
 }
 
-
-
-Protocol.prototype.destroyChannel = function (c) {
-    if (!(c instanceof channel)) {return;}
-    
-    c.extsModes.forEach(function(ext) {
-        id = ext.index; 
-        remove(c.extsModes, id);
-        delete ext;
-    });
-    
-    index = c.index;
-    name = c.name;
-    
-    delete c;
-    remove(this.channels, index);
-    this.emit('channel_destroy', name);
-}
-
 Protocol.prototype.executeNick = function (u, newNick) {
     if (!(u instanceof user)) {return;}
     
     lastNick = u.nick;
     u.nick = newNick;
-    this.emit('user_nick', u, lastNick);
+    this.emitter.emit('user_nick', u, lastNick);
 }
 
 Protocol.prototype.executeTopic = function (c, u, newTopic) {
@@ -308,33 +318,26 @@ Protocol.prototype.executeTopic = function (c, u, newTopic) {
     c.topicBy = u.nick;
     c.topicAt = Math.floor(Date.now() / 1000);
     
-    this.emit('channel_chg_topic', c, u, lastTopic);
+    this.emitter.emit('channel_chg_topic', c, u, lastTopic);
 }
 
 Protocol.prototype.executeOpertype = function (u, type) {
     if (!(u instanceof user)) {return;}
     
     u.opertype = type;
-    this.emit('user_opertype', u, type);
+    this.emitter.emit('user_opertype', u, type);
 }
 
 Protocol.prototype.emitOperquit = function (u, type, reason) {
     if (!(u instanceof user)) {return;}
-    this.emit('user_operquit', u, type, reason);
+    this.emitter.emit('user_operquit', u, type, reason);
 }
 
 Protocol.prototype.executeFhost = function (u, vhost) {
     if (!(u instanceof user)) {return;}
     
     u.vhost = vhost;
-    this.emit('user_chg_vhost', u, vhost);
-}
-
-Protocol.prototype.executeServerVersion = function (s, version) {
-    if (!(s instanceof server)) {return;}
-    
-    s.version = version;
-    this.emit('server_version', s, version);
+    this.emitter.emit('user_chg_vhost', u, vhost);
 }
 
 Protocol.prototype.executeUserAway = function (u, awayMsg) {
@@ -342,9 +345,9 @@ Protocol.prototype.executeUserAway = function (u, awayMsg) {
     
     u.away = awayMsg;
     if (awayMsg === undefined) {
-        this.emit('user_away_off', u);
+        this.emitter.emit('user_away_off', u);
     } else {
-        this.emit('user_away_on', u, awayMsg);
+        this.emitter.emit('user_away_on', u, awayMsg);
     }
 }
 
@@ -353,17 +356,7 @@ Protocol.prototype.channelJoin = function (u, c) {
     if ( (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}
     
     u.addChannel(c);
-    this.emit('user_join', u, c);
-}
-
-Protocol.prototype.introduceChannel = function (name, uptime, modes) {
-    var c = new channel(name, uptime);
-    c.setMode(modes);
-
-    this.channels.push(c);
-    this.emit('channel_introduce', c);
-    
-    return c;
+    this.emitter.emit('user_join', u, c);
 }
 
 Protocol.prototype.processIRCv3AccountName = function (u, account) {
@@ -372,18 +365,18 @@ Protocol.prototype.processIRCv3AccountName = function (u, account) {
     if (account.length > 0) {
         u.account = account;
         u.registered = true;
-        this.emit('user_accountname', u, account);
+        this.emitter.emit('user_accountname', u, account);
 
         role = this.cfg.opers[account];
         if (role !== undefined) {
             u.role = role;
-            this.emit('user_has_role', u, role);
+            this.emitter.emit('user_has_role', u, role);
         }
     } else {
         u.account = undefined;
         u.registered = false;
         u.role = false;
-        this.emit('user_accountname_off', u); 
+        this.emitter.emit('user_accountname_off', u); 
     }
 }
 
@@ -410,7 +403,7 @@ Protocol.prototype.processIRCv3Filter = function (splited) {
 
 Protocol.prototype.introduceFilter = function (action, flags, regex, addby, duration, reason) {
     var f = new filter(action, flags, regex, addby, duration, reason);
-    this.emit('filter_introduce', f);
+    this.emitter.emit('filter_introduce', f);
     f.index = this.filters.push(f);
 
     return f;
@@ -425,5 +418,5 @@ Protocol.prototype.destroyFilter = function (f, by) {
     delete f;
     remove(this.filters, index);
     
-    this.emit('filter_destroy', regex, by);
+    this.emitter.emit('filter_destroy', regex, by);
 }

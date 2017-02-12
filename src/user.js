@@ -1,7 +1,6 @@
 exports = module.exports = User;
 var remove = require('unordered-array-remove');
 var channel = require('./channel');
-var events = require('events');
 var fips = require('fips');
 
 function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
@@ -38,11 +37,7 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     } else {
         this.iptype = 'ipv6';
     }
-    
-    events.EventEmitter.call(this);
 }
-
-User.prototype = Object.create(events.EventEmitter.prototype);
 
 User.prototype.setGeoInfos = function (geo)
 {

@@ -19,7 +19,7 @@ Discutea.prototype.init = function() {
     this.bot = bot;
 
     var that = this;
-    this.ircd.on('user_has_geoinfos', function (u) {
+    this.ircd.emitter.on('user_has_geoinfos', function (u) {
         that.checkBadGeoode(u);    
     });
 };

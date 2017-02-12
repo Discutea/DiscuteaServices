@@ -1,6 +1,5 @@
 exports = module.exports = Channel;
 var remove = require('unordered-array-remove');
-var events = require('events');
 
 function Channel(name, uptime)
 {
@@ -15,10 +14,7 @@ function Channel(name, uptime)
     this.topicAt = undefined;
     this.index = 0;
     this.countUsers = 0;
-    events.EventEmitter.call(this);
 }
-
-Channel.prototype = Object.create(events.EventEmitter.prototype);
 
 Channel.prototype.toString = function ()
 {

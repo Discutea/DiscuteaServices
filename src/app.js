@@ -2,15 +2,19 @@ var config = require('../conf/config');
 var protocol = require("./protocol/"+config.link.protocol);
 var Finder = require('fs-finder');
 var fs = require('fs');
-var socket = require('./socket');
+var socket = require('./socket')
+const EventEmitter = require('events');
+class Emitter extends EventEmitter {}
+const emitter = new Emitter();
+
 
 var s = new socket.Socket(config.link.server, config.link.port, config.link.ssl);
 
 s.conn.once('connect', function () {
 
-    var ircd = new protocol.Ircd(s, config);
+    var ircd = new protocol.Ircd(s, emitter, config);
     
-    ircd.once('ircd_ready', function () {
+    ircd.emitter.once('ircd_ready', function () {
         mods = config.modules.loader;
         mods.forEach(function(moduleName) {
             path = __dirname + '/../modules/' + moduleName;

@@ -7,10 +7,10 @@ var server = require('../server');
 var bot = require('../bot');
 var filter = require('../filter');
 
-function Ircd(sock, cfg) {
+function Ircd(sock, emitter, cfg) {
 
     var that = this;
-    protocol.Protocol.call(this, sock, cfg);
+    protocol.Protocol.call(this, sock, emitter, cfg);
 
     that.run();
 
@@ -42,15 +42,15 @@ Ircd.prototype.dispatcher = function (data) {
     switch (splited[1]) {
         case 'PING':
             this.send('PONG', this.sid, splited[2]);
-            this.emit('ping', data);
+            this.emitter.emit('ping', data);
             break;
         case 'END':
             if (splited[0] == 'CAPAB') {
-                this.emit('ircd_ready', data);
+                this.emitter.emit('ircd_ready', data);
             }
             break;
         case 'ERROR':
-            this.emit('error', data);
+            this.emitter.emit('error', data);
             console.log(data);
             break;
         case 'UID':
@@ -117,19 +117,19 @@ Ircd.prototype.dispatcher = function (data) {
             this.processVersion(splited, splited2);
             break;
         case 'SVSHOLD':
-            this.emit('SVSHOLD', data);
+            this.emitter.emit('SVSHOLD', data);
             break;
         case 'SNOTICE':
-            this.emit('SNOTICE', data);
+            this.emitter.emit('SNOTICE', data);
             break;
         case 'SNONOTICE':
-            this.emit('SNONOTICE', data);
+            this.emitter.emit('SNONOTICE', data);
             break;
         case 'NOTICE':
-            this.emit('NOTICE', data);
+            this.emitter.emit('NOTICE', data);
             break;
         case 'PRIVMSG':
-            this.emit('privmsg', data);
+            this.emitter.emit('privmsg', data);
             break;
         case 'ADDLINE':
             this.processAddline(splited, splited2);

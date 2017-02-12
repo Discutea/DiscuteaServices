@@ -119,7 +119,7 @@ Logger.prototype.init = function() {
     });
     
     this.ircd.on('user_introduce', function (u) {
-        bot.msg(mychan, '\00305(Connection)\00314 ' + u.nick + '!' + u.ident + '@' + u.host + ':' + u.realname +' (' + u.ip + ')\003');
+        bot.msg(mychan, '\00305(Connection)\00314 ' + u.nick + '!' + u.ident + '@' + u.host + ':' + u.realname +' (' + u.ip + ' : ' + u.iptype + ')\003');
     });
    
     this.ircd.on('user_has_geoinfos', function (u) {

@@ -31,6 +31,14 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.opertype = undefined;
     this.role = false;
     this.index = 0;
+    
+    this.iptype = '';
+    if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {
+        this.iptype = 'ipv4';
+    } else {
+        this.iptype = 'ipv6';
+    }
+    
     events.EventEmitter.call(this);
 }
 

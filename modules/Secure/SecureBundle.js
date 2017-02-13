@@ -1,14 +1,14 @@
 var bobot = require('../../src/bot');
 var user = require('../../src/user');
 
-function Discutea(ircd, conf) {
+function Secure(ircd, conf) {
     this.ircd = ircd;
     this.conf = conf;
     this.bot = undefined;
     this.channel = '#Node.Js';
 };
 
-Discutea.prototype.init = function() {
+Secure.prototype.init = function() {
     
     var mychan = this.conf.channel;
     var botconf = this.conf.bot;
@@ -24,7 +24,7 @@ Discutea.prototype.init = function() {
     });
 };
 
-Discutea.prototype.checkBadGeoode = function(u) {
+Secure.prototype.checkBadGeoode = function(u) {
     global = this.conf.badgeocode.global;
     
     if ( (typeof global.target === 'object') && (global.target.indexOf(u.country) >= 0) )  {
@@ -45,4 +45,4 @@ Discutea.prototype.checkBadGeoode = function(u) {
     }
     
 }
-module.exports = Discutea;
+module.exports = Secure;

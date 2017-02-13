@@ -12,13 +12,11 @@ var geoip = require('geoip-lite');
 var socket = require('../socket');
 
 function Protocol(sock, emitter, cfg) {
- //   if (!(sock instanceof socket)) {return;}
     this.channels = []; 
     this.users = [];
     this.xlines = [];
     this.filters = [];
     this.servers = [];
-    this.extsChannel = [];
     this.sock = sock;
     this.emitter = emitter;
     this.sid = cfg.link.sid;
@@ -67,18 +65,10 @@ Protocol.prototype.destroyServer = function (s, reason) {
     this.emitter.emit('server_destroy', name, reason);
 }
 
-Protocol.prototype.executeServerVersion = function (s, version) {
-    if (!(s instanceof server)) {return;}
-    
-    s.version = version;
-    this.emitter.emit('server_version', s, version);
-}
-
 Protocol.prototype.introduceServer = function (sid, name, desc) {
-    var s = new server(sid, name, desc);
-    this.emitter.emit('server_introduce', s);
-    this.servers.push(s);
-
+    var s = new server(this.emitter, sid, name, desc);
+    index = this.servers.push(s);
+    s.index = index;
     return s;
 }
 
@@ -119,10 +109,9 @@ Protocol.prototype.emitMode = function (u, modes, t, intention) {
 }
 
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
-    var u = new user(uid, nick, ident, host, vhost, ip, uptime, realname, s);
+    var u = new user(this.emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s);
     var change = u.setMode(modes);
     this.users.push(u);
-    this.emitter.emit('user_introduce', u);
 
     geoinfos = u.setGeoInfos( geoip.lookup(ip) );
 
@@ -338,25 +327,6 @@ Protocol.prototype.executeFhost = function (u, vhost) {
     
     u.vhost = vhost;
     this.emitter.emit('user_chg_vhost', u, vhost);
-}
-
-Protocol.prototype.executeUserAway = function (u, awayMsg) {
-    if (!(u instanceof user)) {return;}
-    
-    u.away = awayMsg;
-    if (awayMsg === undefined) {
-        this.emitter.emit('user_away_off', u);
-    } else {
-        this.emitter.emit('user_away_on', u, awayMsg);
-    }
-}
-
-Protocol.prototype.channelJoin = function (u, c) {
-    
-    if ( (!(u instanceof user)) || (!(c instanceof channel)) ) {return;}
-    
-    u.addChannel(c);
-    this.emitter.emit('user_join', u, c);
 }
 
 Protocol.prototype.processIRCv3AccountName = function (u, account) {

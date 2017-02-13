@@ -3,10 +3,11 @@ var remove = require('unordered-array-remove');
 var channel = require('./channel');
 var fips = require('fips');
 
-function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
+function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
 {
     if (!(this instanceof User)) { return new User(uid, nick, ident, host, vhost, ip, uptime, realname, s); }
-
+    
+    this.emitter = emitter;
     this.uid = uid;
     this.nick = nick;
     this.ident = ident;
@@ -37,6 +38,8 @@ function User(uid, nick, ident, host, vhost, ip, uptime, realname, s)
     } else {
         this.iptype = 'ipv6';
     }
+    
+    this.emitter.emit('user_introduce', this);
 }
 
 User.prototype.setGeoInfos = function (geo)
@@ -73,6 +76,18 @@ User.prototype.setGeoInfos = function (geo)
 User.prototype.toString = function ()
 {
     return this.nick;
+}
+
+User.prototype.setAway = function (awayMsg)
+{
+    this.away = awayMsg;
+    if (awayMsg === undefined) {
+        this.emitter.emit('user_away_off', this);
+    } else {
+        this.emitter.emit('user_away_on', this, awayMsg);
+    }
+    
+    return this;
 }
 
 User.prototype.setMode = function (modes)
@@ -123,6 +138,7 @@ User.prototype.addChannel = function (c)
     if (c instanceof channel) {
         this.channels.push(c);
         c.countUsers++;
+        this.emitter.emit('user_join', this, c);
     }
 }
 

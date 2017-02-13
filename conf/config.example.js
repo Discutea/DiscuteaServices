@@ -38,9 +38,30 @@ var conf = {
     },
     modules: {
         loader: [
-            'Logger'
+            'Logger',
+            'Secure'
         ],
         config: {
+            Secure: {
+                bot: {
+                    uid:      'BBBBBB',
+                    vhost:    'NodeJs.Discutea.com',
+                    nick:     'SecureServ',
+                    ident:    'Discutea',
+                    modes:    '+IWBOiows +*',
+                    realname: '-- X Bot'
+                },
+                badgeocode: {
+                    global: {
+                        target: 
+                            ['AF','AX','AL','DE','AD','AO','SA','AM','AW','AT',
+                             'AZ','BH','BD','BY','BT','BA','BV','BR','BN','BG'
+                            ],
+                        reason: 'Connections from your country are not allowed.'
+                    }
+                },
+                channel: '#Node.Js'
+            },
             Logger: {
                 bot: {
                     uid:      'AAAAAA',

@@ -190,7 +190,7 @@ Ircd.prototype.processVersion = function (splited, splited2) {
         if ( (typeof version === 'string') && (version.charAt(0) == ":") ) {
             version = version.substring(1);
         }
-        this.executeServerVersion(s, version);
+        s.setVersion(version);
     }
 }
 
@@ -371,7 +371,7 @@ Ircd.prototype.processUserAway = function (splited, splited2) {
     u = this.findUser(splited[0]);
     if (u instanceof user) {
         awayMsg = splited2[2];
-        this.executeUserAway(u, awayMsg);
+        u.setAway(awayMsg);
     }
 }
 
@@ -409,7 +409,7 @@ Ircd.prototype.processChannelJoin = function (splited, splited2) {
     if (splited[1] === 'JOIN') {
         u = that.findUser(splited[0]);
         if (u instanceof user) {
-            that.channelJoin(u, c);
+            u.addChannel(c);
         }
     } else {
         cusers = splited2[2].split(',');
@@ -419,7 +419,7 @@ Ircd.prototype.processChannelJoin = function (splited, splited2) {
             if (uid.length == 9) {
                 u = that.findUser(uid);
                 if (u instanceof user) {
-                    that.channelJoin(u, c);
+                    u.addChannel(c);
                 }
             }
         });

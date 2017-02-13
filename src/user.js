@@ -1,11 +1,12 @@
 exports = module.exports = User;
 var remove = require('unordered-array-remove');
 var channel = require('./channel');
+var user = require('./user');
 var fips = require('fips');
 
 function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
 {
-    if (!(this instanceof User)) { return new User(uid, nick, ident, host, vhost, ip, uptime, realname, s); }
+    if (!(this instanceof User)) { return new User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s); }
     
     this.emitter = emitter;
     this.uid = uid;
@@ -73,6 +74,20 @@ User.prototype.toString = function ()
     return this.nick;
 }
 
+User.prototype.setVhost = function (vhost)
+{
+    u.vhost = vhost;
+    this.emitter.emit('user_chg_vhost', this, vhost);
+
+    return this;
+}
+
+User.prototype.setOperType = function (type)
+{
+    this.opertype = type;
+    this.emitter.emit('user_opertype', this, type);
+}
+
 User.prototype.setNick = function (newNick)
 {
     lastNick = this.nick;
@@ -94,11 +109,9 @@ User.prototype.setAway = function (awayMsg)
     return this;
 }
 
-User.prototype.setMode = function (modes)
-{
+User.prototype.setMode = function (modes, t)
+{    
     if ((typeof modes == 'string') && (modes.length >= 1)) {
-        var add = [];
-        var del = [];
         var that = this;
         var addmode = true;
         
@@ -109,32 +122,21 @@ User.prototype.setMode = function (modes)
                 addmode = false;
             } else {
                 if (addmode) {
-                    a = that.addMode(modes[i]);
-                    if (a) {
-                        add.push(a);
-                    }
+                    that.addMode(modes[i], t);
                 } else {
-                    d = that.delMode(modes[i]);
-                    if (d) {
-                        del.push(d);
-                    }
+                    that.delMode(modes[i], t);
                 }
             }
         }
-        return {add: add, del: del};
     }
-    return false;
 }
 
-User.prototype.addMode = function (mode)
+User.prototype.addMode = function (mode, t = undefined)
 {
-    
     if (this.hasMode(mode) === false) {
         this.modes.push(mode);
-        return mode;
+        this.emitter.emit('user_add_mode', this, modes, t);
     }
-    
-    return false;
 }
 
 User.prototype.addChannel = function (c)
@@ -162,17 +164,16 @@ User.prototype.removeChannel = function (c)
     }
 }
 
-User.prototype.delMode = function (mode)
+User.prototype.delMode = function (mode, t = undefined)
 {
     for (i in this.modes)
     {
         if (this.modes[i] === mode)
         {
             remove(this.modes, i);
-            return mode;
+            this.emitter.emit('user_del_mode', this, mode, t);
         }
     }
-    return false;
 }
 
 User.prototype.hasMode = function(mode) {
@@ -225,6 +226,16 @@ User.prototype.isModerator = function() {
         return true;
     }
     
+    return false;
+}
+
+User.prototype.channelPart = function(c, partMsg) {
+    if (c instanceof channel) {
+        u.removeChannel(c);
+        this.emitter.emit('user_part', this, c, partMsg);
+    
+        return c.countUsers;
+    };
     return false;
 }
 

@@ -199,7 +199,7 @@ Ircd.prototype.processOpertype = function (splited) {
 
     if (u instanceof user) {
         type = splited[2];
-        this.executeOpertype(u, type);
+        u.setOperType(type);
     }
 }
 
@@ -209,7 +209,7 @@ Ircd.prototype.processOperquit = function (splited, splited2) {
     if (u instanceof user) {
         type = splited2[2];
         reason = splited2[3];
-        this.emitOperquit(u, type, reason);
+        this.emitter.emit('user_operquit', u, type, reason);
     }
 }
 
@@ -219,30 +219,22 @@ Ircd.prototype.processTopic = function (splited, splited2) {
     
     if ((u instanceof user) && (c instanceof channel)) {
         newTopic = splited2[2];
-        this.executeTopic(c, u, newTopic);
+        c.setTopic(u.nick, newTopic, false);
     }
 }
 
 Ircd.prototype.processMode = function (splited, splited2) {
     u = this.findUser(splited[2]);
     if (!(u instanceof user)) {return;}
-    
-    change = u.setMode(splited2[2]);
-    
     t = this.findUser(splited[0]);
-    if (!(t instanceof user)) {return;}
-    
-    if (change) {
-        this.emitMode(u, change, t, 'user');
-    }
+    u.setMode(splited2[2], t);
 }
 
 Ircd.prototype.processFhost = function (splited, splited2) {    
     u = this.findUser(splited[0]);
     if (!(u instanceof user)) {return;}
-    
     vhost = splited2[2];
-    this.executeFhost(u, vhost);
+    u.setVhost(vhost);
 }
 
 Ircd.prototype.processFmode = function (splited, splited2) {    
@@ -250,12 +242,8 @@ Ircd.prototype.processFmode = function (splited, splited2) {
     if (!(c instanceof channel)) {return;}
     
     if (splited[5] === undefined) {
-        change = c.setMode(splited2[2]);
-        if (change) {
-            u = this.findUser(splited[0]);
-            if (!(u instanceof user)) {return;}
-            return this.emitMode(u, change, c, 'channel');
-        }
+        u = this.findUser(splited[0]);
+        change = c.setMode(splited2[2], u);
     }
     
     var by = "--";
@@ -308,7 +296,11 @@ Ircd.prototype.parseFmode = function (c, by, time, modes) {
                 target = u;
             }
             
-            this.executeChannelMode(c, by, time, fmodes[i], target, addmode);
+            if (addmode) {
+                c.addExtMode(by, time, fmodes[i], target);
+            } else {
+                c.removeExtMode(by, time, fmodes[i], target);
+            }
         }
     }
 }
@@ -332,8 +324,7 @@ Ircd.prototype.processIntroduceTopic = function (splited, splited2) {
         topicAt = splited[3];
         topicBy = splited[4];
         topic = splited2[2];
-        
-        this.executeIntroduceTopic(c, topicAt, topicBy, topic);
+        c.setTopic(topicBy, topic, topicAt);
     }
 }
 

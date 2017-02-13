@@ -95,18 +95,22 @@ Logger.prototype.init = function() {
     });
     
     this.ircd.emitter.on('user_add_mode', function (u, mode, t) {
+        if (!t) {return;}
         bot.msg(mychan, '\00310(Add UMode)\00314 ' + t.nick + ' ajoute le mode ' + mode + ' à ' + u.nick + '\003');
     });
     
     this.ircd.emitter.on('user_del_mode', function (u, mode, t) {
+       if (!t) {return;}
        bot.msg(mychan, '\00310(Del UMode)\00314 ' + t.nick + ' enlève le mode ' + mode + ' à ' + u.nick + '\003');
     });
     
     this.ircd.emitter.on('channel_add_mode', function (u, mode, c) {
+        if (!u) {return;}
         bot.msg(mychan, '\00306(Add CMode)\00314 ' + u.nick + ' ajoute le mode ' + mode + ' sur ' + c.name + '\003');
     });
     
     this.ircd.emitter.on('channel_del_mode', function (u, mode, c) {
+       if (!u) {return;}
        bot.msg(mychan, '\00306(Del CMode)\00314 ' + u.nick + ' enlève le mode ' + mode + ' sur ' + c.name + '\003');
     });
     
@@ -168,8 +172,8 @@ Logger.prototype.init = function() {
     
     });
     
-    this.ircd.emitter.on('channel_chg_topic', function (c, u) {
-        bot.msg(mychan, '\00310(topic)\00314 ' + u.nick + ' change le topic de ' + c.name + ' :\003 ' + c.topic);
+    this.ircd.emitter.on('channel_chg_topic', function (c, lastTopic) {
+        bot.msg(mychan, '\00310(topic)\00314 ' + c.topicBy + ' change le topic de ' + c.name + ' :\003 ' + c.topic);
     });
    
     this.ircd.emitter.on('user_kick', function (u, target, c, reason) {

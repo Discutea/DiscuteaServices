@@ -27,14 +27,9 @@ var conf = {
     },
     realname: {
         matchbadreal: true,
-        geolocalisation: 'badreal', // false || badreal || all
         matchminor: true,
         minorage: 19,
-        regex: {
-            full: /^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/,
-            age: /^[0-9-]{2}$/,
-            sex: /^[mMHhfFwWCcX]$/
-        }
+        regex: /^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/
     },
     modules: {
         loader: [

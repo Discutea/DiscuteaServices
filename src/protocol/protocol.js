@@ -112,49 +112,8 @@ Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, 
     var u = new user(this.emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s);
     var change = u.setMode(modes);
     this.users.push(u);
-
-    geoinfos = u.setGeoInfos( geoip.lookup(ip) );
-
-    if (geoinfos !== false) {
-        this.emitter.emit('user_has_geoinfos', u);
-    }
-    
-    intention = this.cfg.realname.geolocalisation;
-
-    if (intention === 'all') {
-        return this.forceBadRealname(u, realname, geoinfos, intention);
-    }
-    
-    badreal = this.verifyRealname(u, realname);
-    
-    if ( (badreal === true) && (intention !== false) ) {
-        this.forceBadRealname(u, realname, geoinfos, intention);
-    }
-}
-
-Protocol.prototype.forceBadRealname = function (u, realname, geoinfos, intention) {
-    if ( (intention !== 'badreal') && (intention !== 'all') ) {return;}
-    if (!(u instanceof user)) {return;}
-
-    if (!geoinfos) {
-        geoinfos = 'Inconnu';
-    }
-
-    exreal = realname.split(' ');
-    
-    rage = this.cfg.realname.regex.age;
-    rsex = this.cfg.realname.regex.sex;
-    var that = this;
-    var age = '--';
-    var sexe = ' X ';
-        
-    if (rage.test(exreal[0])) { age = exreal[0]; }
-    if (rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
-    
-    newreal = age + sexe + geoinfos;
-    newreal = newreal.replace(/\s\s+/g, ' ');
-    newreal = newreal.replace(':', '');
-    that.sock.write(':'+that.sid+' CHGNAME ' + u.uid + " :" + newreal);
+    u.setGeoInfos( geoip.lookup(ip) );
+    this.verifyRealname(u, realname);
 }
 
 Protocol.prototype.findBy = function (array, criteria, target)
@@ -247,13 +206,10 @@ Protocol.prototype.verifyRealname = function (u, realname) {
     }
     
     if (this.cfg.realname.matchbadreal === true) {
-        if (!this.cfg.realname.regex.full.test(realname)) {
+        if (!this.cfg.realname.regex.test(realname)) {
             this.emitter.emit('user_has_badreal', u, realname);
-            return true;
         }
     }
-    
-    return false;
 }
 
 
@@ -289,14 +245,6 @@ Protocol.prototype.executeKick = function (u, target, c, reason) {
     {
         this.destroyChannel(c);
     }
-}
-
-Protocol.prototype.executeNick = function (u, newNick) {
-    if (!(u instanceof user)) {return;}
-    
-    lastNick = u.nick;
-    u.nick = newNick;
-    this.emitter.emit('user_nick', u, lastNick);
 }
 
 Protocol.prototype.executeTopic = function (c, u, newTopic) {

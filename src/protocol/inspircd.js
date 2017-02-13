@@ -363,7 +363,7 @@ Ircd.prototype.processNick = function (splited) {
             
     if (u instanceof user) {
         newNick = splited[2];
-        this.executeNick(u, newNick);
+        u.setNick(newNick);
     }
 }
 

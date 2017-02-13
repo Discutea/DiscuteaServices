@@ -63,19 +63,23 @@ User.prototype.setGeoInfos = function (geo)
     }
     
     if (country !== undefined) {
-        if (region !== undefined) {
-           return region.split(' ')[0] + ' ' + country; 
-        } else {
-            return country;
-        }
+        this.emitter.emit('user_has_geoinfos', this);
     }
-    
-    return false;
+
 }
 
 User.prototype.toString = function ()
 {
     return this.nick;
+}
+
+User.prototype.setNick = function (newNick)
+{
+    lastNick = this.nick;
+    this.nick = newNick;
+    this.emitter.emit('user_nick', this, lastNick);
+    
+    return this;
 }
 
 User.prototype.setAway = function (awayMsg)

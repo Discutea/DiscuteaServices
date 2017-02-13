@@ -7,7 +7,6 @@ var xline = require('../xline');
 var filter = require('../filter');
 var find = require('array-find');
 var remove = require('unordered-array-remove');
-var geoip = require('geoip-lite');
 var socket = require('../socket');
 
 function Protocol(sock, emitter, cfg) {
@@ -88,10 +87,8 @@ Protocol.prototype.destroyUser = function (u, reason) {
 
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
     var u = new user(this.emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s);
-    var change = u.setMode(modes, undefined);
+    u.setMode(modes, undefined);
     this.users.push(u);
-    u.setGeoInfos( geoip.lookup(ip) );
-    this.verifyRealname(u, realname);
 }
 
 Protocol.prototype.findBy = function (array, criteria, target)
@@ -136,39 +133,6 @@ Protocol.prototype.findXline = function (type, line) {
         }
     });
 };
-
-Protocol.prototype.executeRealname = function (u, realname) {
-    if (!(u instanceof user)) {return;}
-    
-    lastreal = u.realname;
-    u.realname = realname;
-    this.emitter.emit('user_change_realname', u, lastreal);
-    this.verifyRealname(u, realname);
-
-}
-
-Protocol.prototype.verifyRealname = function (u, realname) {
-    if (!(u instanceof user)) {return;}
-    
-    if (realname !== undefined) {
-        if (this.cfg.realname.matchminor === true) {
-            age = realname.split(' ');
-            age = parseInt(age[0]);
-            if ( (!isNaN(age)) && (age < 99) && (age > 9) ) {
-                u.age = age;
-                if (age <= parseInt(this.cfg.realname.minorage)) {
-                    this.emitter.emit('user_is_mineur', u);
-                }
-            }
-        }
-    }
-    
-    if (this.cfg.realname.matchbadreal === true) {
-        if (!this.cfg.realname.regex.test(realname)) {
-            this.emitter.emit('user_has_badreal', u, realname);
-        }
-    }
-}
 
 Protocol.prototype.executeChannelPart = function (c, u, partMsg) {
     if (u instanceof user) {

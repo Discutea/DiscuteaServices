@@ -313,7 +313,7 @@ Ircd.prototype.processRealname = function (splited, splited2) {
         if ( (typeof realname === 'string') && (realname.charAt(0) == ":") ) {
             realname = realname.substring(1);
         }
-        this.executeRealname(u, realname);
+        u.setRealname(realname);
     }
 }
 
@@ -403,7 +403,11 @@ Ircd.prototype.processChannelJoin = function (splited, splited2) {
             u.addChannel(c);
         }
     } else {
-        cusers = splited2[2].split(',');
+        if (splited2[2] === undefined) {
+            cusers = splited[5].split(',');
+        } else {
+            cusers = splited2[2].split(',');
+        }
         cusers.forEach(function(arg) {
             split = arg.split(' ');
             uid = split[0];

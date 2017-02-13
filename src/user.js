@@ -3,6 +3,8 @@ var remove = require('unordered-array-remove');
 var channel = require('./channel');
 var user = require('./user');
 var fips = require('fips');
+var config = require('../conf/config');
+var geoip = require('geoip-lite');
 
 function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
 {
@@ -39,8 +41,9 @@ function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
     } else {
         this.iptype = 'ipv6';
     }
-    
     this.emitter.emit('user_introduce', this);
+    this.setGeoInfos( geoip.lookup(ip) );
+    this.setRealname(realname, false);
 }
 
 User.prototype.setGeoInfos = function (geo)
@@ -69,14 +72,37 @@ User.prototype.setGeoInfos = function (geo)
 
 }
 
-User.prototype.toString = function ()
+User.prototype.setRealname = function (realname, emit = true)
 {
-    return this.nick;
+    lastreal = this.realname;
+    this.realname = realname;
+    if(emit) {
+        this.emitter.emit('user_change_realname', this, lastreal);
+    }
+    
+    if (realname !== undefined) {
+        if (config.realname.matchminor === true) {
+            age = realname.split(' ');
+            age = parseInt(age[0]);
+            if ( (!isNaN(age)) && (age < 99) && (age > 9) ) {
+                this.age = age;
+                if (age <= parseInt(config.realname.minorage)) {
+                    this.emitter.emit('user_is_mineur', this);
+                }
+            }
+        }
+    }
+    
+    if (config.realname.matchbadreal === true) {
+        if (!config.realname.regex.test(realname)) {
+            this.emitter.emit('user_has_badreal', this, realname);
+        }
+    }
 }
 
 User.prototype.setVhost = function (vhost)
 {
-    u.vhost = vhost;
+    this.vhost = vhost;
     this.emitter.emit('user_chg_vhost', this, vhost);
 
     return this;
@@ -231,7 +257,7 @@ User.prototype.isModerator = function() {
 
 User.prototype.channelPart = function(c, partMsg) {
     if (c instanceof channel) {
-        u.removeChannel(c);
+        this.removeChannel(c);
         this.emitter.emit('user_part', this, c, partMsg);
     
         return c.countUsers;

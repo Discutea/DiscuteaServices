@@ -18,11 +18,6 @@ function Channel(emitter, name, uptime)
     this.countUsers = 0;
 }
 
-Channel.prototype.toString = function ()
-{
-	return this.name;
-}
-
 Channel.prototype.setTopic = function (topicBy, topic, topicAt)
 {
     this.topic = topic;

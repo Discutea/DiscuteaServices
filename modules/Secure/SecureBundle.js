@@ -34,15 +34,15 @@ Secure.prototype.checkBadGeoode = function(u) {
     
     if ( (!u.server) || (!u.server.name) )  {return;}
     userv = u.server.name;
+
+    if (typeof this.conf.badgeocode.byservers[userv] === 'object') {
+        control = this.conf.badgeocode.byservers[userv];
     
-    control = this.conf.badgeocode.byservers[userv];
-    
-    if (control === undefined) {return;}
-    
-    if ( (typeof control.target === 'object') && (control.target.indexOf(u.country) >= 0) )  {
-        this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in ' + userv + ' config ' + u.country + '\003 ');
-        this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 Reason ==> ' + control.reason + '\003 ');
+        if ( (typeof control.target === 'object') && (control.target.indexOf(u.country) >= 0) )  {
+            this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in ' + userv + ' config ' + u.country + '\003 ');
+            this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 Reason ==> ' + control.reason + '\003 ');
+        }
     }
-    
 }
+
 module.exports = Secure;

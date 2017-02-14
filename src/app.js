@@ -46,16 +46,17 @@ process.on('SIGUSR1', function() {
 });
 
 process.on('SIGUSR2', function() {
-    var tmp = __dirname + '/../tmp.txt';
-
+    var tmp = __dirname + '/../tmp/tmp.txt';
     if (fs.existsSync(tmp)) {
         fs.readFile(tmp, 'utf8', function (err,data) {
             if (!err) {
                 if ( (typeof data === 'string') && (data.length > 10) ) {
                     s.write(':'+config.link.sid+' PRIVMSG ' + data);
                 };
-            };
-            fs.unlinkSync(tmp);
+            } else {
+                console.log(err);
+            }
+//            fs.unlinkSync(tmp);
         });
     };
 });

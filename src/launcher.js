@@ -33,12 +33,11 @@ switch (process.argv[2]) {
             end = process.argv.lenght;
             msg = target + ' :' + process.argv.slice(6, end).join(' ') + '\r\n';
 
-            fs.writeFile(__dirname + '/../tmp.txt', msg, (err) => {
+            fs.writeFile(__dirname + '/../tmp/tmp.txt', msg, (err) => {
                 if (!err) {
                     daemon.sendSignal("SIGUSR2");
                 }
             });
-           
         } else {
             console.log('Send message on IRC.');
             console.log('ex: ./bin/Discutea send --channel Node.Js --message Hello world!');

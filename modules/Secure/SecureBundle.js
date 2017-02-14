@@ -1,5 +1,6 @@
 var bobot = require('../../src/bot');
 var user = require('../../src/user');
+var request = require('request');
 
 function Secure(ircd, conf) {
     this.ircd = ircd;
@@ -22,6 +23,17 @@ Secure.prototype.init = function() {
     this.ircd.emitter.on('user_has_geoinfos', function (u) {
         that.checkBadGeoode(u);    
     });
+    
+    this.ircd.emitter.on('user_introduce', function (u) {
+        request('https://api.stopforumspam.org/api?f=json&ip=' + u.ip, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var info = JSON.parse(body);
+                if (info.ip.appears) {
+                    that.bot.kline('*@' + u.host, 900, 'Vôtre adresse ip est listé sur StopForumSpam.');
+                }
+            }
+        });
+    });
 };
 
 Secure.prototype.checkBadGeoode = function(u) {
@@ -29,7 +41,7 @@ Secure.prototype.checkBadGeoode = function(u) {
     
     if ( (typeof global.target === 'object') && (global.target.indexOf(u.country) >= 0) )  {
         this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in global config ' + u.country + '\003 ');
-        this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 Reason ==> ' + global.reason + '\003 ');
+        this.bot.kline('*@' + u.host, 900,  control.reason);
     }
     
     if ( (!u.server) || (!u.server.name) )  {return;}
@@ -40,7 +52,7 @@ Secure.prototype.checkBadGeoode = function(u) {
     
         if ( (typeof control.target === 'object') && (control.target.indexOf(u.country) >= 0) )  {
             this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in ' + userv + ' config ' + u.country + '\003 ');
-            this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 Reason ==> ' + control.reason + '\003 ');
+            this.bot.kline('*@' + u.host, 900, control.reason);
         }
     }
 }

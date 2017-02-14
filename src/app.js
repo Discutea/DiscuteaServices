@@ -52,7 +52,7 @@ process.on('SIGUSR2', function() {
         fs.readFile(tmp, 'utf8', function (err,data) {
             if (!err) {
                 if ( (typeof data === 'string') && (data.length > 10) ) {
-                    ircd.sock.write(':'+config.link.sid+' PRIVMSG ' + data);
+                    s.write(':'+config.link.sid+' PRIVMSG ' + data);
                 };
             };
             fs.unlinkSync(tmp);

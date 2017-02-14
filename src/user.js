@@ -24,6 +24,7 @@ function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.registered = false;
     this.age = undefined;
     this.modes = [];
+    this.stocks = []; // stocks for developers
     this.channels = [];
     this.away = undefined;
     this.lastnicks = [];
@@ -171,6 +172,7 @@ User.prototype.addChannel = function (c)
         this.channels.push(c);
         c.countUsers++;
         this.emitter.emit('user_join', this, c);
+        this.emitter.emit('user_join' + c.name, this, c);
     }
 }
 

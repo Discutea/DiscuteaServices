@@ -120,7 +120,7 @@ Ircd.prototype.dispatcher = function (data) {
             this.emitter.emit('SNOTICE', data);
             break;
         case 'SNONOTICE':
-            this.emitter.emit('SNONOTICE', data);
+            this.emitter.emit('SNONOTICE', splited, splited2, data);
             break;
         case 'NOTICE':
             this.emitter.emit('NOTICE', data);

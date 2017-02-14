@@ -53,3 +53,12 @@ Bot.prototype.join = function(channel) {
 Bot.prototype.msg = function(target, message) {
     this.send('PRIVMSG', target, message);
 };
+
+Bot.prototype.notice = function(target, message) {
+    this.send('NOTICE', target, message);
+};
+
+Bot.prototype.kline = function(target, duration, reason) {
+    time = Math.floor(Date.now() / 1000);
+    this.send('ADDLINE', 'K', target, this.nick, time, duration, reason);
+};

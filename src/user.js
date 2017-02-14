@@ -213,6 +213,15 @@ User.prototype.hasMode = function(mode) {
     return false;
 }
 
+User.prototype.channelPart = function(c, partMsg) {
+    if (c instanceof channel) {
+        this.removeChannel(c);
+        this.emitter.emit('user_part', this, c, partMsg);
+    
+        return c.countUsers;
+    };
+    return false;
+}
 
 User.prototype.isRoot = function() {
     if (this.role === 'ROOT') {
@@ -252,16 +261,6 @@ User.prototype.isModerator = function() {
         return true;
     }
     
-    return false;
-}
-
-User.prototype.channelPart = function(c, partMsg) {
-    if (c instanceof channel) {
-        this.removeChannel(c);
-        this.emitter.emit('user_part', this, c, partMsg);
-    
-        return c.countUsers;
-    };
     return false;
 }
 

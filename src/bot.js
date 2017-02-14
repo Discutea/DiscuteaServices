@@ -1,6 +1,7 @@
 exports = module.exports = Bot;
 
 var ip = require("ip");
+var config = require('../conf/config');
 
 function Bot(uid, vhost, nick, ident, modes, realname)
 {
@@ -13,9 +14,16 @@ function Bot(uid, vhost, nick, ident, modes, realname)
     this.uid = uid;
     this.vhost = vhost;
     this.nick = nick;
-    this.modes = modes;
+    if (config.link.protocol === 'inspircd') {
+        this.modes = modes;
+    } else {
+        this.modes = modes.split(' ')[0];
+    }
+    
+    
     this.me = undefined;
     this.uptime = Math.floor(Date.now() / 1000);
+    this.protocol = config.link.protocol;
 };
 
 Bot.prototype.setIrcd = function (ircd) {
@@ -25,14 +33,18 @@ Bot.prototype.setIrcd = function (ircd) {
 
 Bot.prototype.send = function(command) {
     var args = Array.prototype.slice.call(arguments);
-    args.splice(0, 0, ':' + this.me);
+    if (this.protocol === 'inspircd') {
+        args.splice(0, 0, ':' + this.me);
+    } else {
+        args.splice(0, 0, ':' + this.nick);
+    }
 
     if (args[args.length - 1].match(/\s/) || args[args.length - 1].match(/^:/) || args[args.length - 1] === '') {
         args[args.length - 1] = ':' + args[args.length - 1];
     }
 
     this.ircd.sock.conn.write(args.join(' ') + '\r\n');
-};
+    };
 
 Bot.prototype.join = function(channel) {
     this.send('JOIN', channel);

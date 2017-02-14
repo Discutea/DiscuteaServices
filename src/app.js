@@ -1,5 +1,16 @@
 var config = require('../conf/config');
-var protocol = require("./protocol/"+config.link.protocol);
+
+switch (config.link.protocol) {
+    case 'inspircd':
+        var protocol = require("./protocol/insp/inspircd");
+        break;
+    case 'unrealircd':
+        var protocol = require("./protocol/unreal/unrealircd");
+        break;
+    default:
+        console.log('We do not know the protocol ' + config.link.protocol);
+}
+
 var Finder = require('fs-finder');
 var fs = require('fs');
 var socket = require('./socket')

@@ -1,19 +1,16 @@
 exports.Ircd= Ircd;
 
-var protocol = require('./protocol');
-var channel = require('../channel');
-var user = require('../user');
-var server = require('../server');
-var bot = require('../bot');
-var filter = require('../filter');
+var protocol = require('../protocol');
+var channel = require('../../channel');
+var user = require('../../user');
+var server = require('../../server');
+var bot = require('../../bot');
+var filter = require('../../filter');
 
 function Ircd(sock, emitter, cfg) {
-
     var that = this;
     protocol.Protocol.call(this, sock, emitter, cfg);
-
     that.run();
-
 }
 
 Ircd.prototype = Object.create(protocol.Protocol.prototype);

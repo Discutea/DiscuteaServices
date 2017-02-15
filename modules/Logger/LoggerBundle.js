@@ -125,7 +125,7 @@ Logger.prototype.init = function() {
     this.ircd.emitter.on('user_introduce', function (u) {
         bot.msg(mychan, '\00305(Connection)\00314 ' + u.nick + '!' + u.ident + '@' + u.host + ':' + u.realname +' (' + u.iptype + ': ' + u.ip + ')\003');
     });
-   
+
     this.ircd.emitter.on('user_has_geoinfos', function (u) {
         var geo = '';
        

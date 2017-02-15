@@ -43,7 +43,7 @@ Discutea.prototype.init = function() {
     this.bot = bot;
     setInterval(this.webirc, 15000, bot, this.sql);    
     var that = this;
-
+    
     this.ircd.emitter.on('privmsg'+bot.me+'', function (u, splited, splited2, data) {
         if (!(u instanceof user)) {return;}
         locale = 'en';
@@ -74,7 +74,7 @@ Discutea.prototype.init = function() {
             that.bot.send('KICK', '#Ados', u.nick, 'Salon réservé aux moins de 19 ans.');
         }
     });
-    
+   
     this.ircd.emitter.on('user_has_badreal', function (u, realname) {
         that.processBadReal(u, realname);    
     });

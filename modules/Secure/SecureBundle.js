@@ -20,11 +20,32 @@ Secure.prototype.init = function() {
     this.bot = bot;
 
     var that = this;
+    
+
+    this.ircd.emitter.on('notice'+bot.me+'', function (u, splited, splited2, data) {
+        if (splited[3].substring(1,10) === '\1VERSION') {
+            version = splited.slice(4, splited.length).join(' ');
+            version = version.substring(0, version.length - 1);
+            u.version = version;
+            bot.msg(mychan, '\00304(Version)\00314 ' + u.nick + ' :' + version + '\003');
+        }
+    });
+    // END OF CTCP VERSION
+    
     this.ircd.emitter.on('user_has_geoinfos', function (u) {
         that.checkBadGeoode(u);    
     });
     
     this.ircd.emitter.on('user_introduce', function (u) {
+        if (that.conf.ctcpversion) {
+            that.bot.msg(u.nick, '\1VERSION\1');
+            if (that.conf.bannoctcpreply) {
+                setTimeout(function() { 
+                    that.getIfVersion(u.nick);
+                }, 3000);
+            }
+        }
+        
         if (!that.conf.stopforumspam) {return;}
         
         request('https://api.stopforumspam.org/api?f=json&ip=' + u.ip, function (error, response, body) {
@@ -37,6 +58,14 @@ Secure.prototype.init = function() {
         });
     });
 };
+
+Secure.prototype.getIfVersion = function(nick) {
+    u = this.ircd.findBy(this.ircd.users, 'nick', nick);
+    if ( (u instanceof user) && (!u.version) ) {
+        this.bot.kline('*@' + u.host, 1800, 'Votre client IRC ne répond pas à nos demandes de CTCP version merci de le configurer correctement.');
+        this.bot.msg(this.channel, '\00304(\002NoReply\002)\00314 ' + u.nick + ' no CTCP version'); 
+    }
+}
 
 Secure.prototype.checkBadGeoode = function(u) {
     global = this.conf.badgeocode.global;

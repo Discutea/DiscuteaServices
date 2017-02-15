@@ -123,7 +123,11 @@ Ircd.prototype.dispatcher = function (data) {
             this.emitter.emit('SNONOTICE', splited, splited2, data);
             break;
         case 'NOTICE':
-            this.emitter.emit('NOTICE', data);
+            u = this.findUser(splited[0]);
+            if (u instanceof user) {
+                this.emitter.emit('notice' + splited[2], u, splited, splited2, data);
+            }
+            this.emitter.emit('notice', data);
             break;
         case 'PRIVMSG':
             u = this.findUser(splited[0]);
@@ -488,7 +492,7 @@ Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
             this.processIRCv3Filter(splited);
             break;
         default:
-           // console.log(data);
+//            console.log(data);
             break;
     }
 }

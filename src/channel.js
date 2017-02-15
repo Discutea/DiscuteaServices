@@ -48,7 +48,7 @@ Channel.prototype.removeExtMode = function (by, time, type, target)
     var that = this;
     
     find(that.extsModes, function (search, index) {
-        if ( (search.type === type) && (search.target === target) )
+        if ( (search.type) && (type) && (search.target) && (target) (search.type === type) && (search.target === target) )
         {
             remove(that.extsModes, index);
             delete ext;

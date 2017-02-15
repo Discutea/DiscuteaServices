@@ -12,5 +12,4 @@ function Filter(action, flags, regex, addby, duration, reason)
     this.addby = addby;
     this.duration = duration;
     this.reason = reason;
-    this.index = 0;
 }

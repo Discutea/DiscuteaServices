@@ -8,7 +8,6 @@ function Server(emitter, sid, name, desc)
     this.name = name;
     this.desc = desc;
     this.version = undefined;
-    this.index = 0;
     this.emitter.emit('server_introduce', this);
 }
 

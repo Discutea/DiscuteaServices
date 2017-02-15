@@ -29,17 +29,13 @@ Protocol.prototype.destroyChannel = function (c) {
     if (!(c instanceof channel)) {return;}
     
     c.extsModes.forEach(function(ext) {
-        id = ext.index; 
-        remove(c.extsModes, id);
         delete ext;
     });
     
-    index = c.index;
-    name = c.name;
-    
-    delete c;
-    remove(this.channels, index);
-    this.emitter.emit('channel_destroy', name);
+    if (this.removeObject(this.channels, c)) {
+        this.emitter.emit('channel_destroy', c.name);
+        delete c;
+    }
 }
 
 Protocol.prototype.introduceChannel = function (name, uptime, modes) {
@@ -55,34 +51,29 @@ Protocol.prototype.introduceChannel = function (name, uptime, modes) {
 Protocol.prototype.destroyServer = function (s, reason) {
     if (!(s instanceof server)) {return;}
     
-    name = s.name;
-    index = s.index;
-
-    delete s;
-    remove(this.servers, index);
-    this.emitter.emit('server_destroy', name, reason);
+    if (this.removeObject(this.servers, s)) {
+        this.emitter.emit('server_destroy', s.name, reason);
+        delete s;
+    }    
 }
 
 Protocol.prototype.introduceServer = function (sid, name, desc) {
     var s = new server(this.emitter, sid, name, desc);
-    index = this.servers.push(s);
-    s.index = index;
+    this.servers.push(s);
     return s;
 }
 
 Protocol.prototype.destroyUser = function (u, reason) {
     if (!(u instanceof user)) {return;}
-    
-    nick = u.nick;
-    index = u.index;
-    
+
     u.channels.forEach(function(c) {        
         c.countUsers--;
     });
-
-    delete u;
-    remove(this.users, index);
-    this.emitter.emit('user_destroy', nick, reason);
+    
+    if (this.removeObject(this.users, u)) {
+        this.emitter.emit('user_destroy', u.nick, reason);
+        delete u;
+    }
 }
 
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
@@ -91,6 +82,24 @@ Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, 
     this.users.push(u);
 }
 
+Protocol.prototype.removeObject = function (array, object)
+{
+    if ( typeof object !== 'object') {return false;}
+    
+    matched = false;
+    
+    find(array, function (search, index) {
+        if (search === object)
+        {
+            remove(array, index);
+            matched = true;
+        }
+    });
+    
+    delete object;
+    return matched;
+};
+
 Protocol.prototype.findBy = function (array, criteria, target)
 {
     
@@ -98,10 +107,9 @@ Protocol.prototype.findBy = function (array, criteria, target)
         target = target.substring(1);
     }
 
-    return find(array, function (search, index) {
+    return find(array, function (search) {
         if (search[criteria] === target)
         {
-            search.index = index;
             return search;
         }
     });
@@ -109,19 +117,18 @@ Protocol.prototype.findBy = function (array, criteria, target)
 
 Protocol.prototype.introduceXline = function (type, addr, addby, addat, expireat, reason) {
     var x = new xline(type, addr, addby, addat, expireat, reason);
-    index = this.xlines.push(x);
-    x.index = index;
-
+    this.xlines.push(x);
     this.emitter.emit('add_xline', x);
+    return x;
 };
 
 Protocol.prototype.destroyXline = function (delby, type, line) {
     x = this.findXline(type, line);
     if (x instanceof xline) {
-        name = x.name();
-        remove(this.xlines, x.index);
-        delete x;
-        this.emitter.emit('del_xline', delby, type, line, name);
+        if (this.removeObject(this.xlines, x)) {
+            this.emitter.emit('del_xline', delby, type, line, x.name());
+            delete x;
+        }
     }
 };
 
@@ -157,21 +164,17 @@ Protocol.prototype.executeKick = function (u, target, c, reason) {
 Protocol.prototype.introduceFilter = function (action, flags, regex, addby, duration, reason) {
     var f = new filter(action, flags, regex, addby, duration, reason);
     this.emitter.emit('filter_introduce', f);
-    f.index = this.filters.push(f);
-
+    this.filters.push(f);
     return f;
 }
 
 Protocol.prototype.destroyFilter = function (f, by) {
     if (!(f instanceof filter)) {return;}
-
-    regex = f.regex;
-    index = f.index;
     
-    delete f;
-    remove(this.filters, index);
-    
-    this.emitter.emit('filter_destroy', regex, by);
+    if (this.removeObject(this.filters, f)) {
+        this.emitter.emit('filter_destroy', f.regex, by);
+        delete f;
+    }
 }
 
 Protocol.prototype.processIRCv3AccountName = function (u, account) {

@@ -8,5 +8,4 @@ function ExtChannel(by, time, type, target)
     this.time = time;
     this.type = type;
     this.target = target;
-    this.index = 0;
 }

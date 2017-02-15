@@ -1,5 +1,6 @@
 var bobot = require('../../src/bot');
 var user = require('../../src/user');
+var filter = require('../../src/filter');
 var countries = require("i18n-iso-countries");
 var removeDiacritics = require('diacritics').remove;
 var getYouTubeID = require('get-youtube-id');
@@ -186,10 +187,68 @@ Discutea.prototype.cmdDispatcher = function(u, cmd, data, locale) {
         case 'NICKUNLOCK':
             this.cmdNickUnLock(u, data);
             break;
+        case 'SPAMLIST':
+            this.cmdSpamList(u);
+            break;
+        case 'DELSPAM':
+            this.cmdDelSpam(u, data);
+            break;
         default:
             this.bot.msg(this.channel, '\00304Command:\003 ' + u.nick + ' cmd: ' + cmd + ' data: ' + data);
             break;
     }    
+}
+
+Discutea.prototype.cmdDelSpam = function(u, data) {
+    if (!u.isOperator()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) || (!/^[0-9]{1,4}$/.test(data[0])) ) {
+        this.bot.notice(u.nick, '\00314\[DELSPAM\] \00304Retire un spam');
+        this.bot.notice(u.nick, '\00314\[NOTE\] \00302Utiliser !spamlist pour voir l\'id du spam');
+        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!delspam id');
+        this.bot.notice(u.nick, '\00314\[EXEMPLE\] \00302!delspam 77');
+        return;
+    }
+
+    id = parseInt(data[0]);
+
+    fi = this.ircd.filters[id];    
+
+    if (fi instanceof filter) {
+        this.bot.send('FILTER', fi.regex);
+        this.ircd.destroyFilter(fi, this.bot.nick);
+        this.bot.msg('#Equipe', '\00304(SpamFilter)\003 \00314'+ u.nick +' retire ' + fi.regex);
+    } else {
+        this.bot.notice(u.nick, '\00304['+data[0]+'] Introuvable!');
+    }
+
+}
+
+Discutea.prototype.cmdSpamList = function(u) {
+    if (!u.isOperator()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+    
+    filters = this.ircd.filters;
+    
+    if (!filters) {
+        this.bot.notice(u.nick, '\00302\La liste des Spams est vide.\003');
+        return;
+    }
+    
+    this.bot.notice(u.nick, '\00302\--- Liste des Spams ---\003');
+    
+    var that = this;
+    
+    for (var i in filters){
+        that.bot.notice(u.nick, '\00301\002(\002\00303'+i+'\002\00301)\002 \00307'+filters[i].regex+'\00304 -> ' + filters[i].action);
+    }
+    
+    this.bot.notice(u.nick, '\00302\--- Fin de la liste ---\003');
 }
 
 Discutea.prototype.cmdNickLock = function(u, data) {

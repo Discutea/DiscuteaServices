@@ -14,7 +14,6 @@ function Channel(emitter, name, uptime)
     this.topic = "";
     this.topicBy = undefined;
     this.topicAt = undefined;
-    this.index = 0;
     this.countUsers = 0;
 }
 
@@ -38,8 +37,7 @@ Channel.prototype.setTopic = function (topicBy, topic, topicAt)
 Channel.prototype.addExtMode = function (by, time, type, target)
 {
     var ext = new extchannel(by, time, type, target);
-    index = this.extsModes.push(ext);
-    ext.index = index;
+    this.extsModes.push(ext);
         
     this.emitter.emit('add_ext_channel_mode', this, ext);
 }
@@ -47,10 +45,11 @@ Channel.prototype.addExtMode = function (by, time, type, target)
 Channel.prototype.removeExtMode = function (by, time, type, target)
 {
     var that = this;
-    that.extsModes.forEach(function(ext) {
-        if ( (ext.target === target) && (ext.type === type) ) {
-            id = ext.index;
-            remove(that.extsModes, id);
+    
+    find(that.extsModes, function (search, index) {
+        if ( (search.type === type) && (search.target === target) )
+        {
+            remove(that.extsModes, index);
             delete ext;
             that.emitter.emit('del_ext_channel_mode', c, type, target, by);
         }

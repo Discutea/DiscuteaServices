@@ -34,7 +34,6 @@ function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.version = undefined;
     this.opertype = undefined;
     this.role = false;
-    this.index = 0;
     
     this.iptype = '';
     if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(ip)) {

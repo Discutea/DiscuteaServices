@@ -12,7 +12,6 @@ function Xline(type, addr, addby, addat, expireat, reason)
     this.addat = addat;
     this.expireat = expireat;
     this.reason = reason;
-    this.index = 0;
 }
 
 Xline.prototype.name = function () {

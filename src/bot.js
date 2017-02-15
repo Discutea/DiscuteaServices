@@ -62,3 +62,8 @@ Bot.prototype.kline = function(target, duration, reason) {
     time = Math.floor(Date.now() / 1000);
     this.send('ADDLINE', 'K', target, this.nick, time, duration, reason);
 };
+
+Bot.prototype.gline = function(target, duration, reason) {
+    time = Math.floor(Date.now() / 1000);
+    this.send('ADDLINE', 'G', target, this.nick, time, duration, reason);
+};

@@ -214,7 +214,7 @@ Ircd.prototype.processOperquit = function (splited, splited2) {
     if (u instanceof user) {
         type = splited2[2];
         reason = splited2[3];
-        this.emitter.emit('user_operquit', u, type, reason);
+        this.emitter.emit('user_operquit', u.nick, type, reason);
     }
 }
 
@@ -298,7 +298,7 @@ Ircd.prototype.parseFmode = function (c, by, time, modes) {
             
             u = this.findUser(target);
             if (u instanceof user) {
-                target = u;
+                target = u.nick;
             }
             
             if (addmode) {

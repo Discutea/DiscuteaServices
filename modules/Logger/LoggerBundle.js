@@ -38,8 +38,8 @@ Logger.prototype.init = function() {
         bot.msg(mychan, '\00304\002(Oper)\002\00314 ' + u.nick + ' ' + type + '\003 ');
     });
     
-    this.ircd.emitter.on('user_operquit', function (u, type, reason) {
-        bot.msg(mychan, '\00304\002(' + type + ')\002\00314 ' + u.nick + '\003 ' + reason);
+    this.ircd.emitter.on('user_operquit', function (nick, type, reason) {
+        bot.msg(mychan, '\00304\002(' + type + ')\002\00314 ' + nick + '\003 ' + reason);
     });
     
     this.ircd.emitter.on('user_chg_vhost', function (u, vhost) {

@@ -37,6 +37,8 @@ Channel.prototype.setTopic = function (topicBy, topic, topicAt)
 
 Channel.prototype.addExtMode = function (by, time, type, target)
 {
+    if ( (type === undefined) || (target === undefined) ) {return;}
+    
     var ext = new extchannel(by, time, type, target);
     this.extsModes.push(ext);
         
@@ -46,13 +48,16 @@ Channel.prototype.addExtMode = function (by, time, type, target)
 Channel.prototype.removeExtMode = function (by, time, type, target)
 {
     var that = this;
-    
+
     find(that.extsModes, function (search, index) {
-        if ( (search.type) && (type) && (search.target) && (target) (search.type === type) && (search.target === target) )
-        {
+        if (search instanceof extchannel) {
+            if ( (search.type === type) && (search.target === target) ) {
+                remove(that.extsModes, index);
+                delete ext;
+                that.emitter.emit('del_ext_channel_mode', that, type, target, by);
+            }
+        } else {
             remove(that.extsModes, index);
-            delete ext;
-            that.emitter.emit('del_ext_channel_mode', c, type, target, by);
         }
     });
 }

@@ -42,7 +42,7 @@ Secure.prototype.init = function() {
             if (that.conf.bannoctcpreply) {
                 setTimeout(function() { 
                     that.getIfVersion(u.nick);
-                }, 3000);
+                }, 4000);
             }
         }
         
@@ -52,17 +52,28 @@ Secure.prototype.init = function() {
             if (!error && response.statusCode == 200) {
                 var info = JSON.parse(body);
                 if (info.ip.appears) {
-                    that.bot.kline('*@' + u.host, 900, 'Vôtre adresse ip est listé sur StopForumSpam.');
+                    that.bot.gline('*@' + u.host, 1800, 'Votre adresse ip est listé sur StopForumSpam.');
                 }
             }
         });
+        
+        request('https://check.getipintel.net/check.php?ip='+u.ip+'&contact=hello@discutea.com', function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var info = parseInt(JSON.parse(body));
+                if (info > 0.9) {
+                    that.bot.msg('#Netadmin', u.nick + ' => ' + u.ip + ' => matched score: ' + info);
+                    that.bot.gline('*@' + u.host, 1800, 'Votre adresse ip est listé sur nos blacklistes.');
+                }
+            }
+        });
+        
     });
 };
 
 Secure.prototype.getIfVersion = function(nick) {
     u = this.ircd.findBy(this.ircd.users, 'nick', nick);
-    if ( (u instanceof user) && (!u.version) ) {
-        this.bot.kline('*@' + u.host, 1800, 'Votre client IRC ne répond pas à nos demandes de CTCP version merci de le configurer correctement.');
+    if ( (u instanceof user) && (!u.version) && (!u.account) ) {
+        this.bot.gline('*@' + u.host, 1800, 'Votre client IRC ne répond pas à nos demandes de CTCP version merci de le configurer correctement.');
         this.bot.msg(this.channel, '\00304(\002NoReply\002)\00314 ' + u.nick + ' no CTCP version'); 
     }
 }
@@ -72,7 +83,7 @@ Secure.prototype.checkBadGeoode = function(u) {
     
     if ( (typeof global.target === 'object') && (global.target.indexOf(u.country) >= 0) )  {
         this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in global config ' + u.country + '\003 ');
-        this.bot.kline('*@' + u.host, 900,  control.reason);
+        this.bot.gline('*@' + u.host, 900,  control.reason);
     }
     
     if ( (!u.server) || (!u.server.name) )  {return;}
@@ -83,7 +94,7 @@ Secure.prototype.checkBadGeoode = function(u) {
     
         if ( (typeof control.target === 'object') && (control.target.indexOf(u.country) >= 0) )  {
             this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in ' + userv + ' config ' + u.country + '\003 ');
-            this.bot.kline('*@' + u.host, 900, control.reason);
+            this.bot.gline('*@' + u.host, 900, control.reason);
         }
     }
 }

@@ -126,6 +126,10 @@ Ircd.prototype.dispatcher = function (data) {
             this.emitter.emit('NOTICE', data);
             break;
         case 'PRIVMSG':
+            u = this.findUser(splited[0]);
+            if (u instanceof user) {
+                this.emitter.emit('privmsg' + splited[2], u, splited, splited2, data);
+            }
             this.emitter.emit('privmsg', data);
             break;
         case 'ADDLINE':
@@ -137,7 +141,7 @@ Ircd.prototype.dispatcher = function (data) {
         default:
            // console.log(data);
             break;
-    }    
+    }
 };
 
 Ircd.prototype.processDelline = function (splited, splited2) {

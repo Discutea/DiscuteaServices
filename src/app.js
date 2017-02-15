@@ -56,7 +56,8 @@ process.on('SIGUSR2', function() {
             } else {
                 console.log(err);
             }
-//            fs.unlinkSync(tmp);
+            fs.unlinkSync(tmp);
         });
     };
 });
+

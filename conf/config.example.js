@@ -46,6 +46,7 @@ var conf = {
                     modes:    '+IWBOiows +*',
                     realname: '-- X Bot'
                 },
+                stopforumspam: true,
                 badgeocode: {
                     global: {
                         target: 

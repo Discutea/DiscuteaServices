@@ -1,0 +1,245 @@
+var bobot = require('../../src/bot');
+var user = require('../../src/user');
+var countries = require("i18n-iso-countries");
+var removeDiacritics = require('diacritics').remove;
+var getYouTubeID = require('get-youtube-id');
+var request = require('request');
+var mysql = require('mysql2');
+
+function Discutea(ircd, conf) {
+    this.ircd = ircd;
+    this.conf = conf;
+    this.bot = undefined;
+    this.channel = '#Node.Js';
+    this.conf.badreal.rage
+    
+    this.sql = mysql.createConnection(conf.sql);
+    this.youtubekey = conf.youtube_api;
+};
+
+Discutea.prototype.webirc = function(bot, sql) {
+    matched = false;
+    sql.query('SELECT * FROM command', function (err, results) {
+        results.forEach(function(res) {
+            if ( (res.message) && (res.target) ) {
+                matched = true;
+                bot.msg(res.target, '(\002\00304WebSite\003\002) \00314' + res.message + '\003');
+            }
+        });
+        if (matched) {
+            sql.query('TRUNCATE TABLE command');
+        }
+    });
+}
+
+Discutea.prototype.init = function() {
+    
+    var mychan = this.conf.channel;
+    var botconf = this.conf.bot;
+    var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
+    this.ircd.introduceBot( bot );
+    bot.join(mychan);
+    this.bot = bot;
+    setInterval(this.webirc, 15000, bot, this.sql);    
+    var that = this;
+
+    this.ircd.emitter.on('privmsg'+bot.me+'', function (u, splited, splited2, data) {
+        if (!(u instanceof user)) {return;}
+        locale = 'en';
+        
+        switch (u.server.name) {
+            case 'irc.discutea.fr':
+                locale = 'fr';
+                break;
+            case 'irc.discutea.es':
+                locale = 'es';
+                break;
+        }
+        
+        cmd = splited[3];
+        if ( (typeof cmd === 'string') && (cmd.charAt(0) == ":") ) {
+            cmd = cmd.substring(1);
+        }
+        data = splited.slice(4,splited.length);
+        that.cmdDispatcher(u, cmd, data, locale);
+    });
+
+    this.ircd.emitter.on('user_join#Ados', function (u, c) {
+        if ( (!u.role) && (u.age > 19) ) {
+            that.bot.send('MODE', '#Ados', '+s');
+            that.bot.send('MODE', '#Ados', '+e', '*!*@*discutea.com');
+            that.bot.send('MODE', '#Ados', '+b', '*!*@' + u.vhost, ':');
+            that.bot.send('MODE', '#Ados', '+bbbbbbbbbb', 'r:--* r:2* r:3* r:4* r:5* r:6* r:7* r:2* r:8* r:9*', ':');
+            that.bot.send('KICK', '#Ados', u.nick, 'Salon réservé aux moins de 19 ans.');
+        }
+    });
+    
+    this.ircd.emitter.on('user_has_badreal', function (u, realname) {
+        that.processBadReal(u, realname);    
+    });
+
+    this.ircd.emitter.on('user_accountname', function (u, account) {
+        that.bot.send('SAJOIN', u.nick, '#Vip-FR');
+    });
+
+    this.ircd.emitter.on('user_is_mineur', function (u) {
+        that.bot.send('SAJOIN', u.nick, '#Ados');
+    });
+    
+    this.ircd.emitter.on('user_has_role', function (u, role) {
+        that.bot.send('SAJOIN', u.nick, '#Equipe');
+        that.bot.send('SAJOIN', u.nick, '#Aide');
+        that.bot.send('SAJOIN', u.nick, '#Ados');
+    });
+    
+    this.ircd.emitter.on('SNONOTICE', function (splited, splited2, data) {
+        //filter youtube\.com\/watch\?v\=[[:print:]]{11} block p :Discutea_Youtube
+        //filter youtu\.be\/[[:print:]]{11} block p :Discutea_Youtube
+        if ( (splited2[2] === 'FILTER') && (splited[12] === 'Discutea_Youtube' ) ) {
+            nick = splited[4];
+            u = that.ircd.findBy(that.ircd.users, 'nick', nick);
+            if (!(u instanceof user)) {return;}
+            now = Math.floor(Date.now() / 1000);
+            
+            if (u.stocks['ytb'] !== undefined) {
+                timediff = now - u.stocks['ytb'];
+                if (timediff < 120) {
+                    wait = 120 - timediff;
+                    that.bot.notice(nick, '\00304\002\[Anti Flood\]\002\003 Vous devez patienter encore ' + wait + ' secondes pour poster une nouvelle vidéo');
+                    return;
+                }
+            }
+            
+            chan = splited[11].replace(':', '');
+            vid = getYouTubeID( splited.slice(14, +splited.length) );
+
+            youtubeapi = 'https://www.googleapis.com/youtube/v3/videos?id='+vid+'&key='+that.youtubekey+'&part=snippet&fields=items/snippet/title'
+            
+            request(youtubeapi, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var infos = JSON.parse(body);
+                    infos.items.forEach(function(info) {
+                        u.stocks['ytb'] = now;
+                        that.bot.msg(chan, '\002\00301You\00304Tube\003\002  \00301Partage de\002\00306 '+nick+' \002\00301Titre:\00306 ' + info.snippet.title);
+                        that.bot.msg(chan, '\00306Lien:\003 https://youtu.be/' + vid);
+                        that.bot.msg('#Musique', '\002\00301You\00304Tube\003\002  \00301Partage de\002\00306 '+nick+' sur ' + chan + ' \002\00301Titre:\00306 ' + info.snippet.title);
+                        that.bot.msg('#Musique', '\00306Lien:\003 https://youtu.be/' + vid);
+                    });
+                }
+            });
+            
+
+        }
+    });
+};
+
+Discutea.prototype.processBadReal = function(u, realname) {
+    // remove accents
+    nreal = removeDiacritics(realname);
+    if (!/^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/.test(nreal)) {
+        exreal = realname.split(' ');
+        var age = '--';
+        var sexe = ' X ';
+        
+        if (this.conf.badreal.rage.test(exreal[0])) { age = exreal[0]; }
+        if (this.conf.badreal.rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
+    
+        nreal = age + sexe;
+    
+        if (u.region !== undefined) {
+            nreal = nreal + u.region;
+            if (nreal.length <= 30) {
+                nreal = nreal + ' ' + countries.getName(u.country, "fr");
+            }
+        } else {
+            if (u.country !== undefined) {
+                nreal = nreal + countries.getName(u.country, "fr");
+            } else {
+                nreal = nreal + 'Inconnu';
+            }
+        }
+        
+        nreal = removeDiacritics(nreal);
+    }
+    
+    nreal = nreal.replace(/\s\s+/g, ' ');
+    nreal = nreal.replace(':', '');
+
+    this.bot.send('CHGNAME', u.uid, nreal);    
+}
+
+Discutea.prototype.cmdDispatcher = function(u, cmd, data, locale) {
+    switch (cmd.toUpperCase()) {
+        case 'AIDE':
+            this.cmdHelp(u);
+            break;
+        case 'RULES':
+            this.cmdRules(u, locale);
+            break;
+        default:
+            this.bot.msg(this.channel, '\00304Command:\003 ' + u.nick + ' cmd: ' + cmd + ' data: ' + data);
+            break;
+    }    
+}
+
+Discutea.prototype.cmdHelp = function(u) {
+    this.bot.notice(u.nick, '\00303Discutea Irc Services');
+    this.bot.notice(u.nick, '-');
+    this.bot.notice(u.nick, '\002\00304\[INFO\] \002\00302 Tapez la commande seul pour obtenir plus d\'aide.');
+    this.bot.notice(u.nick, '\00301\[\002\00303Tchatteur\002\00301\]');
+    this.bot.notice(u.nick, '\002\00303!regles\002\00304 ->\00302 Affiche les règles du tchat');
+    this.bot.notice(u.nick, '-');
+    
+    if (u.isHelper()) {
+        this.bot.notice(u.nick, '\00301\[\002\00307Helpeurs\002\00301\]');
+        this.bot.notice(u.nick, '\002\00307!kaide (pseudo)\002\00302 Expulse un utilisateur de #Aide');
+        this.bot.notice(u.nick, '\002\00307!jaide (pseudo) \002\00302 Sajoin un utilisateuur sur #Aide');
+        this.bot.notice(u.nick, '-');
+    }
+
+    if (u.isModerator()) {
+        this.bot.notice(u.nick, '\00301\[\002\00306Modérateur\00301\]');
+        this.bot.notice(u.nick, '\002\00306!nicklock (pseudo)\002\00302 Empeche l\'utilisateur de changer de pseudo.');
+        this.bot.notice(u.nick, '\002\00306!nickunlock (pseudo)\002\00302 Debloque un utilisateur bloqué avec NICKLOCK');
+        this.bot.notice(u.nick, '\002\00304(( !inco ))\003\002 et \002\00304(( !delnick ))\003\002 \00302fonctionnent maintenant avec Anope');
+        this.bot.notice(u.nick, '-');
+    }
+    
+    if (u.isOperator()) {
+        this.bot.notice(u.nick, '\00301\[\002\00310AOP && SOP\002\00301\]');
+        this.bot.notice(u.nick, '\002\00310!spam (spam à ajouter)\002\00302 Ajoute une chaine de spam');
+        this.bot.notice(u.nick, '\002\00310!spamlist\002\00302 Affiche la liste des spams');
+        this.bot.notice(u.nick, '\002\00310!delspam (id)\002\00302 Retire un spam de la liste');
+        this.bot.notice(u.nick, '\002\00304(( !addnick ))\002 \00302fonctionnent maintenant avec Anope');
+        this.bot.notice(u.nick, '-');
+    }
+
+    this.bot.notice(u.nick, '\00303GitHub: https://github.com/Discutea/DiscuteaServices/');
+}
+
+Discutea.prototype.cmdRules = function(u, locale) {
+    if (!locale) {return;}
+    var that = this;
+    
+    if (locale === 'en') {
+        url = 'https://discutea.net/rules.txt';
+    } else {
+        url = 'https://discutea.'+locale+'/rules.txt';
+    }
+    
+    require('request').get(url, function (error, response, lines) {
+        if (!error && response.statusCode == 200) {
+            lines.split(/\n|\r/).forEach(function(line) {
+                if (!line) {
+                    that.bot.msg(u.nick, '-');
+                } else {
+                    that.bot.msg(u.nick, line);
+                }
+            });
+        } else {
+            this.bot.notice(u.nick, '\00304Désolé une erreur c\'est produite!');
+        }
+    });
+}
+
+module.exports = Discutea;

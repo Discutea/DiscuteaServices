@@ -25,6 +25,8 @@ Secure.prototype.init = function() {
     });
     
     this.ircd.emitter.on('user_introduce', function (u) {
+        if (!that.conf.stopforumspam) {return;}
+        
         request('https://api.stopforumspam.org/api?f=json&ip=' + u.ip, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var info = JSON.parse(body);

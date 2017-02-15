@@ -127,8 +127,6 @@ Discutea.prototype.init = function() {
                     });
                 }
             });
-            
-
         }
     });
 };
@@ -170,16 +168,124 @@ Discutea.prototype.processBadReal = function(u, realname) {
 
 Discutea.prototype.cmdDispatcher = function(u, cmd, data, locale) {
     switch (cmd.toUpperCase()) {
-        case 'AIDE':
+        case 'HELP':
             this.cmdHelp(u);
             break;
         case 'RULES':
             this.cmdRules(u, locale);
             break;
+        case 'KHELP':
+            this.cmdKHelp(u, data);
+            break;
+        case 'JHELP':
+            this.cmdJHelp(u, data);
+            break;
+        case 'NICKLOCK':
+            this.cmdNickLock(u, data);
+            break;
+        case 'NICKUNLOCK':
+            this.cmdNickUnLock(u, data);
+            break;
         default:
             this.bot.msg(this.channel, '\00304Command:\003 ' + u.nick + ' cmd: ' + cmd + ' data: ' + data);
             break;
     }    
+}
+
+Discutea.prototype.cmdNickLock = function(u, data) {
+    if (!u.isModerator()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314\[NICKLOCK\] \00302 Cette empeche un utilisateur de changer de pseudo');
+        this.bot.notice(u.nick, '\00314\[INFO\] \00302 La commande peut être suivis d\'un second pseudo pour bloquer avec le second');
+        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!nicklock pseudo pseudo1');
+        this.bot.notice(u.nick, '\00314\[EXPLICATIONS\] \00302Pour l\'exemple ci-dessus pseudo serra changé en pseudo1 et l\'utilisateur serra ensuite bloqué avec pseudo1');
+        return;
+    }
+    
+    target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+    if (!(target instanceof user)) {
+        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+        return;
+    }
+    
+    if (data[1] === undefined) {
+        newnick = data[0];
+    } else {
+       newnick = data[1];
+    }
+    
+    this.bot.send('NICKLOCK', target.nick, newnick);
+    this.bot.msg('#Equipe', '\00304(NickLock)\00314 '+u.nick+' bloque ' + target.nick + ' en ' + newnick);
+}
+
+Discutea.prototype.cmdNickUnLock = function(u, data) {
+    if (!u.isModerator()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314\[NICKLOCK\] \00302 Debloque un pseudo prècedement bloqué');
+        return;
+    }
+    
+    target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+    if (!(target instanceof user)) {
+        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+        return;
+    }
+        
+    this.bot.send('NICKUNLOCK', target.nick);
+    this.bot.msg('#Equipe', '\00304(NickLock)\00314 '+u.nick+' debloque ' + target.nick);
+}
+
+Discutea.prototype.cmdKHelp = function(u, data) {
+    if (!u.isHelper()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314\[KAIDE\] \00302 Cette commande kick un utilisateur de #Aide');
+        this.bot.notice(u.nick, '\00314\[KAIDE\] \00302 La commande doit être suivis d\'un pseudo');
+        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!kaide pseudo');
+        return;
+    }
+    
+    target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+    if (!(target instanceof user)) {
+        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+        return;
+    }
+        
+    this.bot.send('KICK', '#Aide', target.nick, 'Salon réservé à l\'aide ! Merci de ne pas squatter.');
+}
+
+Discutea.prototype.cmdJHelp = function(u, data) {
+    if (!u.isHelper()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+  
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314\[JAIDE\] \00302 Cette commande force un utilisateur à joindre #Aide');
+        this.bot.notice(u.nick, '\00314\[JAIDE\] \00302 La commande doit être suivis d\'un pseudo');
+        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!jaide pseudo');
+        return;
+    }
+
+    target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+    if (!(target instanceof user)) {
+        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+        return;
+    }
+    
+    this.bot.send('SAJOIN', target.nick, '#Aide');
+    this.bot.msg('#Aide', 'Bonjour ' + target.nick + ', ' + u.nick + ' vous a forcé à rejoindre #Aide merci de patienter quelques instants il va vous expliquer pourquoi.');
 }
 
 Discutea.prototype.cmdHelp = function(u) {

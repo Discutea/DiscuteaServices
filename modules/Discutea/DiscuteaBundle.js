@@ -106,7 +106,7 @@ Discutea.prototype.init = function() {
                 timediff = now - u.stocks['ytb'];
                 if (timediff < 120) {
                     wait = 120 - timediff;
-                    that.bot.notice(nick, '\00304\002\[Anti Flood\]\002\003 Vous devez patienter encore ' + wait + ' secondes pour poster une nouvelle vidéo');
+                    that.bot.notice(nick, '\00304\002[Anti Flood]\002\003 Vous devez patienter encore ' + wait + ' secondes pour poster une nouvelle vidéo');
                     return;
                 }
             }
@@ -193,10 +193,38 @@ Discutea.prototype.cmdDispatcher = function(u, cmd, data, locale) {
         case 'DELSPAM':
             this.cmdDelSpam(u, data);
             break;
+        case 'SPAM':
+            this.cmdSpam(u, data);
+            break;
         default:
             this.bot.msg(this.channel, '\00304Command:\003 ' + u.nick + ' cmd: ' + cmd + ' data: ' + data);
             break;
     }    
+}
+
+Discutea.prototype.cmdSpam = function(u, data) {
+    if (!u.isOperator()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314[SPAM] \00304Attention de ne pas faire n\'importe quoi');
+        this.bot.notice(u.nick, '\00314[NOTE] \00302Les caractères sont déjà échappés');
+        this.bot.notice(u.nick, '\00314[NOTE] \00302Vous ne pouvez pas ajouter de regex avec cette commande utilisez /filter');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!spam www.exemple.com');
+        return;
+    }
+
+    action = 'gline';
+    flags = 'pnPqo';
+    regex = data[0].replace(/\./g, '\\.').replace(/\//g, '\\/').replace(/\*/g, '');
+    duration = 3600;
+    reason = 'Spam_' + Math.floor(1000 + Math.random() * 9000);
+    
+    this.bot.send('FILTER', regex, action, flags, duration, reason);
+    this.ircd.introduceFilter(action, flags, regex, this.bot.nick, duration, reason);
+    this.bot.msg('#Equipe', '\00304(SpamFilter)\003 \00314'+ u.nick +' ajoute ' + regex );
 }
 
 Discutea.prototype.cmdDelSpam = function(u, data) {
@@ -206,10 +234,10 @@ Discutea.prototype.cmdDelSpam = function(u, data) {
     }
 
     if ( (!data) || (!data[0]) || (!/^[0-9]{1,4}$/.test(data[0])) ) {
-        this.bot.notice(u.nick, '\00314\[DELSPAM\] \00304Retire un spam');
-        this.bot.notice(u.nick, '\00314\[NOTE\] \00302Utiliser !spamlist pour voir l\'id du spam');
-        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!delspam id');
-        this.bot.notice(u.nick, '\00314\[EXEMPLE\] \00302!delspam 77');
+        this.bot.notice(u.nick, '\00314[DELSPAM] \00304Retire un spam');
+        this.bot.notice(u.nick, '\00314[NOTE] \00302Utiliser !spamlist pour voir l\'id du spam');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!delspam id');
+        this.bot.notice(u.nick, '\00314[EXEMPLE] \00302!delspam 77');
         return;
     }
 
@@ -224,7 +252,8 @@ Discutea.prototype.cmdDelSpam = function(u, data) {
     } else {
         this.bot.notice(u.nick, '\00304['+data[0]+'] Introuvable!');
     }
-
+    
+    this.bot.notice(u.nick, '\00304[IMPORTANT] \00314Recharger la liste après chaques ajouts ou supressions!');
 }
 
 Discutea.prototype.cmdSpamList = function(u) {
@@ -240,7 +269,7 @@ Discutea.prototype.cmdSpamList = function(u) {
         return;
     }
     
-    this.bot.notice(u.nick, '\00302\--- Liste des Spams ---\003');
+    this.bot.notice(u.nick, '\00302--- Liste des Spams ---\003');
     
     var that = this;
     
@@ -248,7 +277,8 @@ Discutea.prototype.cmdSpamList = function(u) {
         that.bot.notice(u.nick, '\00301\002(\002\00303'+i+'\002\00301)\002 \00307'+filters[i].regex+'\00304 -> ' + filters[i].action);
     }
     
-    this.bot.notice(u.nick, '\00302\--- Fin de la liste ---\003');
+    this.bot.notice(u.nick, '\00302--- Fin de la liste ---\003');
+    this.bot.notice(u.nick, '\00304[IMPORTANT] \00314Recharger la liste après chaques ajouts ou supressions!');
 }
 
 Discutea.prototype.cmdNickLock = function(u, data) {
@@ -258,10 +288,10 @@ Discutea.prototype.cmdNickLock = function(u, data) {
     }
 
     if ( (!data) || (!data[0]) ) {
-        this.bot.notice(u.nick, '\00314\[NICKLOCK\] \00302 Cette empeche un utilisateur de changer de pseudo');
-        this.bot.notice(u.nick, '\00314\[INFO\] \00302 La commande peut être suivis d\'un second pseudo pour bloquer avec le second');
-        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!nicklock pseudo pseudo1');
-        this.bot.notice(u.nick, '\00314\[EXPLICATIONS\] \00302Pour l\'exemple ci-dessus pseudo serra changé en pseudo1 et l\'utilisateur serra ensuite bloqué avec pseudo1');
+        this.bot.notice(u.nick, '\00314[NICKLOCK] \00302 Cette empeche un utilisateur de changer de pseudo');
+        this.bot.notice(u.nick, '\00314[INFO] \00302 La commande peut être suivis d\'un second pseudo pour bloquer avec le second');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!nicklock pseudo pseudo1');
+        this.bot.notice(u.nick, '\00314[EXPLICATIONS] \00302Pour l\'exemple ci-dessus pseudo serra changé en pseudo1 et l\'utilisateur serra ensuite bloqué avec pseudo1');
         return;
     }
     
@@ -288,7 +318,7 @@ Discutea.prototype.cmdNickUnLock = function(u, data) {
     }
 
     if ( (!data) || (!data[0]) ) {
-        this.bot.notice(u.nick, '\00314\[NICKLOCK\] \00302 Debloque un pseudo prècedement bloqué');
+        this.bot.notice(u.nick, '\00314[NICKLOCK] \00302 Debloque un pseudo prècedement bloqué');
         return;
     }
     
@@ -309,9 +339,9 @@ Discutea.prototype.cmdKHelp = function(u, data) {
     }
 
     if ( (!data) || (!data[0]) ) {
-        this.bot.notice(u.nick, '\00314\[KAIDE\] \00302 Cette commande kick un utilisateur de #Aide');
-        this.bot.notice(u.nick, '\00314\[KAIDE\] \00302 La commande doit être suivis d\'un pseudo');
-        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!kaide pseudo');
+        this.bot.notice(u.nick, '\00314[KAIDE] \00302 Cette commande kick un utilisateur de #Aide');
+        this.bot.notice(u.nick, '\00314[KAIDE] \00302 La commande doit être suivis d\'un pseudo');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!kaide pseudo');
         return;
     }
     
@@ -331,9 +361,9 @@ Discutea.prototype.cmdJHelp = function(u, data) {
     }
   
     if ( (!data) || (!data[0]) ) {
-        this.bot.notice(u.nick, '\00314\[JAIDE\] \00302 Cette commande force un utilisateur à joindre #Aide');
-        this.bot.notice(u.nick, '\00314\[JAIDE\] \00302 La commande doit être suivis d\'un pseudo');
-        this.bot.notice(u.nick, '\00314\[UTILISATION\] \00302!jaide pseudo');
+        this.bot.notice(u.nick, '\00314[JAIDE] \00302 Cette commande force un utilisateur à joindre #Aide');
+        this.bot.notice(u.nick, '\00314[JAIDE] \00302 La commande doit être suivis d\'un pseudo');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!jaide pseudo');
         return;
     }
 
@@ -350,20 +380,20 @@ Discutea.prototype.cmdJHelp = function(u, data) {
 Discutea.prototype.cmdHelp = function(u) {
     this.bot.notice(u.nick, '\00303Discutea Irc Services');
     this.bot.notice(u.nick, '-');
-    this.bot.notice(u.nick, '\002\00304\[INFO\] \002\00302 Tapez la commande seul pour obtenir plus d\'aide.');
-    this.bot.notice(u.nick, '\00301\[\002\00303Tchatteur\002\00301\]');
+    this.bot.notice(u.nick, '\002\00304[INFO] \002\00302 Tapez la commande seul pour obtenir plus d\'aide.');
+    this.bot.notice(u.nick, '\00301[\002\00303Tchatteur\002\00301]');
     this.bot.notice(u.nick, '\002\00303!regles\002\00304 ->\00302 Affiche les règles du tchat');
     this.bot.notice(u.nick, '-');
     
     if (u.isHelper()) {
-        this.bot.notice(u.nick, '\00301\[\002\00307Helpeurs\002\00301\]');
+        this.bot.notice(u.nick, '\00301[\002\00307Helpeurs\002\00301]');
         this.bot.notice(u.nick, '\002\00307!kaide (pseudo)\002\00302 Expulse un utilisateur de #Aide');
         this.bot.notice(u.nick, '\002\00307!jaide (pseudo) \002\00302 Sajoin un utilisateuur sur #Aide');
         this.bot.notice(u.nick, '-');
     }
 
     if (u.isModerator()) {
-        this.bot.notice(u.nick, '\00301\[\002\00306Modérateur\00301\]');
+        this.bot.notice(u.nick, '\00301[\002\00306Modérateur\00301]');
         this.bot.notice(u.nick, '\002\00306!nicklock (pseudo)\002\00302 Empeche l\'utilisateur de changer de pseudo.');
         this.bot.notice(u.nick, '\002\00306!nickunlock (pseudo)\002\00302 Debloque un utilisateur bloqué avec NICKLOCK');
         this.bot.notice(u.nick, '\002\00304(( !inco ))\003\002 et \002\00304(( !delnick ))\003\002 \00302fonctionnent maintenant avec Anope');
@@ -371,7 +401,7 @@ Discutea.prototype.cmdHelp = function(u) {
     }
     
     if (u.isOperator()) {
-        this.bot.notice(u.nick, '\00301\[\002\00310AOP && SOP\002\00301\]');
+        this.bot.notice(u.nick, '\00301[\002\00310AOP && SOP\002\00301]');
         this.bot.notice(u.nick, '\002\00310!spam (spam à ajouter)\002\00302 Ajoute une chaine de spam');
         this.bot.notice(u.nick, '\002\00310!spamlist\002\00302 Affiche la liste des spams');
         this.bot.notice(u.nick, '\002\00310!delspam (id)\002\00302 Retire un spam de la liste');

@@ -2,6 +2,7 @@ exports = module.exports = Channel;
 
 var remove = require('unordered-array-remove');
 var extchannel = require('./extchannel');
+var find = require('array-find');
 
 function Channel(emitter, name, uptime)
 {

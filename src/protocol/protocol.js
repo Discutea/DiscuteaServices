@@ -39,7 +39,11 @@ Protocol.prototype.destroyChannel = function (c) {
 }
 
 Protocol.prototype.introduceChannel = function (name, uptime, modes) {
-    var c = new channel(this.emitter, name, uptime);
+    if ( (typeof name === 'string') && (name.charAt(0) == ":") ) {
+        name = name.substring(1);
+    }
+    
+    c = new channel(this.emitter, name, uptime);
     c.setMode(modes, undefined);
 
     this.channels.push(c);
@@ -58,7 +62,7 @@ Protocol.prototype.destroyServer = function (s, reason) {
 }
 
 Protocol.prototype.introduceServer = function (sid, name, desc) {
-    var s = new server(this.emitter, sid, name, desc);
+    s = new server(this.emitter, sid, name, desc);
     this.servers.push(s);
     return s;
 }
@@ -77,7 +81,7 @@ Protocol.prototype.destroyUser = function (u, reason) {
 }
 
 Protocol.prototype.introduceUser = function (uid, nick, ident, host, vhost, ip, uptime, realname, s, modes) {
-    var u = new user(this.emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s);
+    u = new user(this.emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s);
     u.setMode(modes, undefined);
     this.users.push(u);
 }
@@ -116,7 +120,7 @@ Protocol.prototype.findBy = function (array, criteria, target)
 };
 
 Protocol.prototype.introduceXline = function (type, addr, addby, addat, expireat, reason) {
-    var x = new xline(type, addr, addby, addat, expireat, reason);
+    x = new xline(type, addr, addby, addat, expireat, reason);
     this.xlines.push(x);
     this.emitter.emit('add_xline', x);
     return x;
@@ -162,7 +166,7 @@ Protocol.prototype.executeKick = function (u, target, c, reason) {
 }
 
 Protocol.prototype.introduceFilter = function (action, flags, regex, addby, duration, reason) {
-    var f = new filter(action, flags, regex, addby, duration, reason);
+    f = new filter(action, flags, regex, addby, duration, reason);
     this.emitter.emit('filter_introduce', f);
     this.filters.push(f);
     return f;

@@ -491,6 +491,12 @@ Ircd.prototype.processIRCv3 = function (splited, splited2, data) {
         case 'filter':
             this.processIRCv3Filter(splited);
             break;
+        case 'ssl_cert':
+            u = this.findUser(splited[2]);
+            if (u instanceof user) {
+                u.ssl = true;
+            }
+            break;
         default:
 //            console.log(data);
             break;

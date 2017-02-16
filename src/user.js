@@ -30,6 +30,7 @@ function User(emitter, uid, nick, ident, host, vhost, ip, uptime, realname, s)
     this.lastnicks = [];
     this.country = undefined;
     this.region = undefined;
+    this.ssl = false;
     this.city = undefined;
     this.version = undefined;
     this.opertype = undefined;

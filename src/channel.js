@@ -52,8 +52,8 @@ Channel.prototype.removeExtMode = function (by, time, type, target)
     find(that.extsModes, function (search, index) {
         if (search instanceof extchannel) {
             if ( (search.type === type) && (search.target === target) ) {
-                remove(that.extsModes, index);
                 delete ext;
+                remove(that.extsModes, index);
                 that.emitter.emit('del_ext_channel_mode', that, type, target, by);
             }
         } else {

@@ -1,5 +1,8 @@
 var bobot = require('../../src/bot');
 var user = require('../../src/user');
+var server = require('../../src/server');
+var channel = require('../../src/channel');
+var nmap = require('libnmap');
 var filter = require('../../src/filter');
 var countries = require("i18n-iso-countries");
 var removeDiacritics = require('diacritics').remove;
@@ -43,6 +46,12 @@ Discutea.prototype.init = function() {
     this.bot = bot;
     setInterval(this.webirc, 15000, bot, this.sql);    
     var that = this;
+
+    this.ircd.emitter.on('user_join#Aide', function (u, c) {
+        if ( (!u.role) && (!u.hasMode('k')) ) {
+            that.informationUser(u, 'help');
+        }
+    });
     
     this.ircd.emitter.on('privmsg'+bot.me+'', function (u, splited, splited2, data) {
         if (!(u instanceof user)) {return;}
@@ -196,10 +205,156 @@ Discutea.prototype.cmdDispatcher = function(u, cmd, data, locale) {
         case 'SPAM':
             this.cmdSpam(u, data);
             break;
+        case 'INFOUSER':
+            this.cmdInfoUser(u, data);
+            break;
+        case 'NMAP':
+            this.cmdNmap(u, data);
+            break;
         default:
             this.bot.msg(this.channel, '\00304Command:\003 ' + u.nick + ' cmd: ' + cmd + ' data: ' + data);
             break;
     }    
+}
+
+Discutea.prototype.cmdNmap = function(u, data) {
+    if (!u.isOperator()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314[Nmap] \00302Recherche des informations sur l\'ip d\'un utilisateur.');
+        this.bot.notice(u.nick, '\00314[NOTE] \00302Informations retourné sur le salon staff.');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!nmap pseudo');
+        return;
+    }
+
+    if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(data[0])) {
+        target = data[0];
+    } else {
+        target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+        if (!(target instanceof user)) {
+            this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+            return;
+        } else {
+            target = target.ip;
+        }
+    }
+    
+    var that = this;
+    opts = {range: [target]};
+ 
+    nmap.scan(opts, function(err, report) {
+        if (err) {
+            console.log(err);
+            return;
+        }
+console.log(JSON.stringify(report));
+        for (item in report) {
+            if (typeof report[item].host !== 'object') {
+                that.bot.msg('#Equipe', '\00306 Nmap ' + data[0] + '\003 aucun port ouvert détécté.');
+                return;
+            }
+
+            ports = report[item].host[0].ports[0].port;
+            if (ports !== undefined) {
+                for (i in ports) {
+                    p = ports[i].item;
+                    that.bot.msg('#Equipe', '\00306 Nmap ' + data[0] + '\003 Port: \002' + p.portid + '\002 Protocol: \002' + p.protocol);
+                }
+            }
+        }
+        that.bot.msg('#Equipe', '\00304 End of NMAP');
+    });
+    
+    this.bot.msg('#Equipe', '\00304 Nmap en cours sur ' + data[0] + ' demandé pas ' + u.nick);
+}
+
+Discutea.prototype.informationUser = function(t, by) {
+    if (!(t instanceof user)) {return;}
+    if (by instanceof user) {
+        this.bot.msg('#Equipe', '\00304'+by.nick+' Demande des informations sur '+t.nick+'\003');
+    } else {
+        if (by === 'help') {
+            this.bot.notice('#Equipe', '\00304'+t.nick+' entre sur #Aide\003"');
+        } else {
+            return;
+        }
+    }
+    
+    this.bot.msg('#Equipe', 'Information sur ' + t.nick);
+    this.bot.msg('#Equipe', '-');
+    this.bot.msg('#Equipe', '\00306Générale:\003 '+t.nick+'\002 '+t.ident+'@'+t.vhost + ' ('+t.iptype+')');
+    this.bot.msg('#Equipe', '\00306Asv:\003 '+ t.realname);
+    this.bot.msg('#Equipe', '\00306Modes:\003 ' + t.modes.join(''));
+    
+    if (t.server instanceof server) {
+        this.bot.msg('#Equipe', '\00306Server:\003 ' + t.server.name);
+    }
+    
+    if (t.channels.length >= 1) {
+        chans = [];
+        t.channels.forEach(function(chan) {
+            if (chan instanceof channel) {
+                chans.push(chan.name);
+            }
+        });
+        this.bot.msg('#Equipe', '\00306Salons:\003 ' + chans.join(', '));
+        delete chans;
+    }
+    
+    
+    if (t.account) {
+        this.bot.msg('#Equipe', '\00303\002'+t.nick+'\002 est connecté en temps que \002'+t.account+'\002.\003');
+    } else {
+        this.bot.msg('#Equipe', '\00304\002'+t.nick+'\002 n\'est pas enregistré');
+    }
+
+    if(t.ssl) {
+        this.bot.msg('#Equipe', '\00303'+t.nick+' utilise une connexion ssl.\003');
+    } else {
+        this.bot.msg('#Equipe', '\00304'+t.nick+' n\'utilise pas de connexion ssl.\003');
+    }
+    
+    if(t.opertype) {
+        this.bot.msg('#Equipe', '\00304'+t.nick+' est '+t.opertype+'.');
+    }
+		
+    this.bot.msg('#Equipe', '\00306Version:\003 ' + t.version);
+    
+    if (t.country) {
+        this.bot.msg('#Equipe', '\00306GeoLocalisation:\003 ' + countries.getName(t.country, "fr") + ' - ' + t.country);
+    }
+    if (t.region) {
+        this.bot.msg('#Equipe', '\00306GeoRegion:\003 ' + t.region);
+    }
+    if (t.region) {
+        this.bot.msg('#Equipe', '\00306GeoCity:\003 ' + t.city);
+    }
+    this.bot.msg('#Equipe', '-');
+}
+
+Discutea.prototype.cmdInfoUser = function(u, data) {
+    if (!u.isHelper()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+
+    if ( (!data) || (!data[0]) ) {
+        this.bot.notice(u.nick, '\00314[INFOUSER] \00302Recherche des informations sur un utilisateur.');
+        this.bot.notice(u.nick, '\00314[NOTE] \00302Informations retourné sur le salon staff.');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!info pseudo');
+        return;
+    }
+
+    target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+    if (!(target instanceof user)) {
+        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+        return;
+    }
+    
+    this.informationUser(target, u);
 }
 
 Discutea.prototype.cmdSpam = function(u, data) {
@@ -402,6 +557,7 @@ Discutea.prototype.cmdHelp = function(u) {
     
     if (u.isOperator()) {
         this.bot.notice(u.nick, '\00301[\002\00310AOP && SOP\002\00301]');
+        this.bot.notice(u.nick, '\002\00310!nmap (pseudo | ipv4)\002\00302 Lance un NMAP sur une ip');
         this.bot.notice(u.nick, '\002\00310!spam (spam à ajouter)\002\00302 Ajoute une chaine de spam');
         this.bot.notice(u.nick, '\002\00310!spamlist\002\00302 Affiche la liste des spams');
         this.bot.notice(u.nick, '\002\00310!delspam (id)\002\00302 Retire un spam de la liste');

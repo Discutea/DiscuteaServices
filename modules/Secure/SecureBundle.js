@@ -82,6 +82,8 @@ Secure.prototype.checkBadGeoode = function(u) {
     global = this.conf.badgeocode.global;
     
     if ( (typeof global.target === 'object') && (global.target.indexOf(u.country) >= 0) )  {
+        if ( (u.country === 'DE') && (u.host.match(/\*dyn\.telefonica\.de/g)) ) {return;}
+        
         this.bot.msg(this.channel, '\00304(\002BadGeocode\002)\00314 ' + u.nick + ' matched in global config ' + u.country + '\003 ');
         this.bot.gline('*@' + u.host, 900,  control.reason);
     }

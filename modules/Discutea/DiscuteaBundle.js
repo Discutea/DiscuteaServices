@@ -6,9 +6,12 @@ var nmap = require('libnmap');
 var filter = require('../../src/filter');
 var countries = require("i18n-iso-countries");
 var removeDiacritics = require('diacritics').remove;
+var remove = require('unordered-array-remove');
 var getYouTubeID = require('get-youtube-id');
 var request = require('request');
 var mysql = require('mysql2');
+var abuse = require('./abuse');
+var find = require('array-find');
 
 function Discutea(ircd, conf) {
     this.ircd = ircd;
@@ -16,6 +19,7 @@ function Discutea(ircd, conf) {
     this.bot = undefined;
     this.channel = '#Node.Js';
     this.conf.badreal.rage
+    this.abuses = [];
     
     this.sql = mysql.createConnection(conf.sql);
     this.youtubekey = conf.youtube_api;
@@ -47,6 +51,59 @@ Discutea.prototype.init = function() {
     setInterval(this.webirc, 15000, bot, this.sql);    
     var that = this;
 
+    /* test abuse */
+    
+    this.ircd.emitter.on('user_join', function (u, c) {
+        find(that.abuses, function (search) {
+            if (search instanceof abuse) {
+                if ( (search.channel === c) && (u.ident === search.uid) ) {
+                  if (search.retry>=1) {
+                    that.bot.msg('#equipe', '\00310(contournement)\003 \00314'+u.nick+' a été glined du réseau.\003');
+                    that.bot.gline('*@' + u.host, 259200,  'Vous êtes banni du réseau 3 jours trop de tentatives de contournements.');
+                  } else {
+                    that.bot.send('MODE', c.name, '+b', '*!*@' + u.vhost, ':');
+                    that.bot.send('KICK', c.name, u.nick, 'contournement vous êtes déjà banni de ce salon.');
+                    that.bot.msg('#equipe', '\00310(contournement)\003 \00314'+u.nick+' a été banni de ' + c.name);
+                    search.retry++;
+                  }
+                }
+            }
+        });
+    });
+    
+    this.ircd.emitter.on('add_ext_channel_mode', function (c, ext) {
+        if (ext.type === 'b') {
+            target = ext.target.split('@')[1];
+            if (typeof target !== 'string') {return;}
+            if (!target.match(/\*/g)) {
+                u = that.ircd.findBy(that.ircd.users, 'vhost', target);
+                if ((u instanceof user) && (u.version) && (typeof u.version === 'string')) {                    
+                    if ( (u.version.split(' ')[0] === 'KiwiIRC') && (u.ident != 'KiwiIrc') ) {
+                        a = new abuse(u.ident, c, ext.target, ext.time);
+                        that.abuses.push(a);
+                    }
+                }
+            }
+        }
+    });
+       
+    this.ircd.emitter.on('del_ext_channel_mode', function (c, type, target, by) {
+        if (type === 'b') {
+            find(that.abuses, function (search, index) {
+                if (search instanceof abuse) {
+                    if ( (target === search.target) && (search.channel === c) ) {
+                        remove(that.abuses, index);
+                        delete search;
+                    }
+                }
+            });
+        }
+    });
+    
+    /* end abuse */
+    
+    
+    
     this.ircd.emitter.on('user_join#Aide', function (u, c) {
         if ( (!u.role) && (!u.hasMode('k')) ) {
             that.informationUser(u, 'help');

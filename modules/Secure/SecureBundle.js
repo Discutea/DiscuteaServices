@@ -56,17 +56,6 @@ Secure.prototype.init = function() {
                 }
             }
         });
-        
-        request('https://check.getipintel.net/check.php?ip='+u.ip+'&contact=hello@discutea.com', function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                var info = parseInt(JSON.parse(body));
-                if (info > 0.9) {
-                    that.bot.msg('#Netadmin', u.nick + ' => ' + u.ip + ' => matched score: ' + info);
-                    that.bot.gline('*@' + u.host, 1800, 'Votre adresse ip est listé sur nos blacklistes.');
-                }
-            }
-        });
-        
     });
 };
 

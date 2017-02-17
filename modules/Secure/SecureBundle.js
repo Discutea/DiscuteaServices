@@ -6,28 +6,24 @@ function Secure(ircd, conf) {
     this.ircd = ircd;
     this.conf = conf;
     this.bot = undefined;
-    this.channel = '#Node.Js';
+    this.channel = conf.channel;
 };
 
 Secure.prototype.init = function() {
     
-    var mychan = this.conf.channel;
     var botconf = this.conf.bot;
-
     var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
     this.ircd.introduceBot( bot );
-    bot.join(mychan);
+    bot.join(this.channel);
     this.bot = bot;
-
     var that = this;
-    
 
     this.ircd.emitter.on('notice'+bot.me+'', function (u, splited, splited2, data) {
         if (splited[3].substring(1,10) === '\1VERSION') {
             version = splited.slice(4, splited.length).join(' ');
             version = version.substring(0, version.length - 1);
             u.version = version;
-            bot.msg(mychan, '\00304(Version)\00314 ' + u.nick + ' :' + version + '\003');
+            bot.msg(that.channel, '\00304(Version)\00314 ' + u.nick + ' :' + version + '\003');
         }
     });
     // END OF CTCP VERSION

@@ -112,9 +112,16 @@ Protocol.prototype.findBy = function (array, criteria, target)
     }
 
     return find(array, function (search) {
-        if (search[criteria] === target)
-        {
-            return search;
+        if (typeof search === 'object') {
+            if (typeof target === 'string') {
+                if (search[criteria].toUpperCase() === target.toUpperCase()) {
+                    return search;
+                }
+            } else if (typeof target === 'object') {
+                if (search[criteria] === target) {
+                    return search;
+                }
+            }
         }
     });
 };

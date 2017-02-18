@@ -86,10 +86,7 @@ Discutea.prototype.init = function() {
             });
         }
     });
-    
     /* end abuse */
-    
-    
     
     this.ircd.emitter.on('user_join#Aide', function (u, c) {
         if ( (!u.role) && (!u.hasMode('k')) && (!u.opertype) ) {

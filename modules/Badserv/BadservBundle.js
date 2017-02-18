@@ -41,6 +41,12 @@ Badserv.prototype.init = function() {
           case 'BADNICKLIST':
             that.cmdBadNickList(u);
             break;
+          case 'ADDNICK':
+            that.cmdBadNick(u, data, 'addnick');
+            break;
+          case 'DELNICK':
+            that.cmdDelNick(u, data);
+            break;
         }
     });
 
@@ -96,30 +102,72 @@ Badserv.prototype.cmdBadNickList = function(u) {
     that.bot.msg(u.nick, '***');
 }
 
-Badserv.prototype.cmdBadNick = function(u, data) {
-
+Badserv.prototype.cmdDelNick = function(u, data) {
+    var that = this;
+    
     if ( (!data) || (!data[0]) ) {
-        this.bot.notice(u.nick, '\00314[BADNICK] \00302Change un pseudo incorrect et l\'enregistre dans la base de donnée.');
-        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!inco pseudo ou !badnick pseudo');
+        this.bot.notice(u.nick, '\00314[DEKNICK] \00302Retire un pseudo incorrect de la base de donnée.');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!delnick pseudo');
         return;
     }
     
-    target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
-    if (!(target instanceof user)) {
-        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+    badnick = data[0];
+    this.sql.execute('DELETE FROM `anope_badnick` WHERE nick = ?', [badnick], function (err, results) {
+        if ((err) || (!results.affectedRows)) {
+            that.bot.notice(u.nick, '\00304[ERREUR] \00302' +badnick+ ', n\'a pas été retiré a la base de donnée.');
+            return false;
+        } else {
+            that.updateBadnicks();
+            that.bot.notice(u.nick, '\00303[BADNICK] \00302' +badnick+ ', a bien été retiré a la base de donnée.')
+        }
+    });
+    
+    return true;
+}
+
+Badserv.prototype.cmdBadNick = function(u, data, intention = 'badnick') {
+
+    if ( (!data) || (!data[0]) ) {
+        if (intention === 'badnick') {
+            this.bot.notice(u.nick, '\00314[BADNICK] \00302Change un pseudo incorrect et l\'enregistre dans la base de donnée.');
+            this.bot.notice(u.nick, '\00314[UTILISATION] \00302!inco pseudo ou !badnick pseudo');
+        } else {
+            this.bot.notice(u.nick, '\00314[ADDNICK] \00302Ajoute un pseudo incorrect dans la base de donnée sans le changer.');
+            this.bot.notice(u.nick, '\00314[NOTE] \00302Les jokers (*) sont autorisés.');
+            this.bot.notice(u.nick, '\00314[UTILISATION] \00302!addnick *badnick*');
+        }
         return;
     }
+    
+    if (intention === 'badnick') {
+        target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+        if (!(target instanceof user)) {
+            this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+            return;
+        }
 
-    rand = Math.floor(Date.now() / 1000).toString().substring(4);
-    newnick = 'Pseudo_' + rand;
-    this.insertBadnick(target.nick, u.account);
-    this.bot.send('SANICK', target.nick, newnick, ':');
-    this.bot.msg('#Equipe', '\00304(BadNick)\003 \00314'+u.nick+' change ' + target.nick + ' en ' + newnick);
+        badnick = target.nick;
+        rand = Math.floor(Date.now() / 1000).toString().substring(4);
+        newnick = 'Pseudo_' + rand;
+        
+        this.bot.send('SANICK', badnick, newnick, ':');
+        this.bot.msg('#Equipe', '\00304(BadNick)\003 \00314'+u.nick+' change ' + badnick + ' en ' + newnick);
+    } else {
+        badnick = data[0];
+    }
+        
+    if (!this.insertBadnick(badnick, u.account)) {
+        this.bot.notice(u.nick, '\00304[ERREUR] \00302' +badnick+ ', n\'a pas été ajouté a la base de donnée.');
+    } else {
+        this.bot.notice(u.nick, '\00303[BADNICK] \00302' +badnick+ ', a bien été ajouté a la base de donnée.');
+    }
 }
 
 Badserv.prototype.insertBadnick = function(nick, addby) {
     var that = this;
-    if (this.isBadnick(nick) !== false) {
+    
+    test = nick.replace(/\*/g, '');
+    if (this.isBadnick(test) !== false) {
         return false;
     }
     

@@ -392,7 +392,10 @@ Command.prototype.cmdHelp = function(u) {
         this.bot.notice(u.nick, '\00301[\002\00306Modérateur\00301]');
         this.bot.notice(u.nick, '\002\00306!nicklock (pseudo)\002\00302 Empeche l\'utilisateur de changer de pseudo.');
         this.bot.notice(u.nick, '\002\00306!nickunlock (pseudo)\002\00302 Debloque un utilisateur bloqué avec NICKLOCK');
-        this.bot.notice(u.nick, '\002\00304(( !inco ))\003\002 et \002\00304(( !delnick ))\003\002 \00302fonctionnent maintenant avec Anope');
+        this.bot.notice(u.nick, '\002\00306!badnicks\002\00302 Affiche la liste des badnicks');
+        this.bot.notice(u.nick, '\002\00306!inco pseudo\002\00302 Ajoute un pseudo incorrect a la base et change le pseudo');
+        this.bot.notice(u.nick, '\002\00306!addnick badnick\002\00302 Ajoute un pseudo incorrect dans la base de donnée');
+        this.bot.notice(u.nick, '\002\00306!delnick badnick\002\00302 Retire un pseudo incorrect dans la base de donnée');
         this.bot.notice(u.nick, '-');
     }
     
@@ -402,7 +405,6 @@ Command.prototype.cmdHelp = function(u) {
         this.bot.notice(u.nick, '\002\00310!spam (spam à ajouter)\002\00302 Ajoute une chaine de spam');
         this.bot.notice(u.nick, '\002\00310!spamlist\002\00302 Affiche la liste des spams');
         this.bot.notice(u.nick, '\002\00310!delspam (id)\002\00302 Retire un spam de la liste');
-        this.bot.notice(u.nick, '\002\00304(( !addnick ))\002 \00302fonctionnent maintenant avec Anope');
         this.bot.notice(u.nick, '-');
     }
 

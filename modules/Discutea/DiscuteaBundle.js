@@ -22,7 +22,6 @@ function Discutea(ircd, conf) {
     this.abuses = [];
     this.sql = mysql.createConnection(conf.sql);
     this.youtubekey = conf.youtube_api;
-    this.badnicks = [];
 };
 
 Discutea.prototype.init = function() {
@@ -30,6 +29,7 @@ Discutea.prototype.init = function() {
     var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
     this.ircd.introduceBot( bot );
     bot.join(this.channel);
+    bot.send('MODE', this.channel, '+h', bot.nick, ':');
     this.conf.officialChannels.forEach(function(chan) {
         bot.join(chan);
         bot.send('MODE', chan, '+qo', bot.nick, bot.nick, ':');
@@ -37,7 +37,6 @@ Discutea.prototype.init = function() {
     this.bot = bot;
     setInterval(this.webirc, 15000, bot, this.sql);
     this.cmd = new command(this.ircd, bot, this.sql, this.conf.channel);
-    this.initBadnicks();
     var that = this;
 
     /* test abuse */
@@ -187,18 +186,9 @@ Discutea.prototype.init = function() {
         }
     });
     
-    /* badnicks */
-    this.ircd.emitter.on('user_nick', function (u, last) {
-        that.verifyBadnick(u);
-    });
-    this.ircd.emitter.on('user_introduce', function (u) {
-        that.verifyBadnick(u);
-    });
-    /* end of badnicks */
-    
     setInterval(function() { // check auto unban
-        that.autoUnBan()
-    }, 60000);
+        that.autoUnBan();
+    }, 3 * 60000);
 };
 
 Discutea.prototype.autoUnBan = function() {
@@ -271,30 +261,6 @@ Discutea.prototype.webirc = function(bot, sql) {
         });
         if (matched) {
             sql.query('TRUNCATE TABLE command');
-        }
-    });
-}
-
-Discutea.prototype.initBadnicks = function() {
-    var that = this;
-    that.sql.query('SELECT nick FROM `anope_badnick` WHERE 1', function (err, results) {
-        results.forEach(function(res) {
-            bad = res.nick.replace(/\*/g, '\\\w*');
-            regex = new RegExp(bad, 'gi')
-            that.badnicks.push( regex );
-        });
-    });
-}
-
-Discutea.prototype.verifyBadnick = function(u) {
-    if (!(u instanceof user)) {return;}
-    var that = this;
-    that.badnicks.forEach(function(badnick) {
-        if (u.nick.match(badnick)) {
-            rand = Math.floor(Date.now() / 1000).toString().substring(4);
-            newnick = 'Pseudo_' + rand;
-            that.bot.send('SANICK', u.nick, newnick, ':');
-            that.bot.msg(that.channel, '\00304(BadNick)\003 \00314'+u.nick+' matché sur ' + badnick + 'changé en ' + newnick);
         }
     });
 }

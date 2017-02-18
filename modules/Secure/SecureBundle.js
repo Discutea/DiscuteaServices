@@ -15,6 +15,7 @@ Secure.prototype.init = function() {
     var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
     this.ircd.introduceBot( bot );
     bot.join(this.channel);
+    bot.send('MODE', this.channel, '+h', bot.nick, ':');
     this.bot = bot;
     var that = this;
 

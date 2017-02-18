@@ -13,6 +13,7 @@ Logger.prototype.init = function() {
     var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
     this.ircd.introduceBot( bot );
     bot.join(mychan);
+    bot.send('MODE', mychan, '+h', bot.nick, ':');
 
     this.ircd.emitter.on('filter_introduce', function (f) {
         if (!f.addby) {
@@ -20,7 +21,7 @@ Logger.prototype.init = function() {
         } else {
             bot.msg(mychan, '\00304(SpamFilter)\00314 ' + f.addby + ' ajoute ' + f.regex + '\003 ');
         }
-    });
+    }); 
     
     this.ircd.emitter.on('filter_destroy', function (regex, by) {
         bot.msg(mychan, '\00304(SpamFilter)\00314 ' + by + ' suprime ' + regex + '\003 ');

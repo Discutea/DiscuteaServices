@@ -1,24 +1,21 @@
-var bobot = require('../../src/bot');
-var user = require('../../src/user');
-var server = require('../../src/server');
-var channel = require('../../src/channel');
-var extchannel = require('../../src/extchannel');
-var countries = require("i18n-iso-countries");
-var removeDiacritics = require('diacritics').remove;
-var remove = require('unordered-array-remove');
-var getYouTubeID = require('get-youtube-id');
-var request = require('request');
-var mysql = require('mysql2');
-var abuse = require('./abuse');
-var command = require('./command');
-var find = require('array-find');
+var bobot = require('../../src/bot'),
+    user = require('../../src/user'),
+    server = require('../../src/server'),
+    channel = require('../../src/channel'),
+    extchannel = require('../../src/extchannel'),
+    remove = require('unordered-array-remove'),
+    getYouTubeID = require('get-youtube-id'),
+    request = require('request'),
+    mysql = require('mysql2'),
+    abuse = require('./abuse'),
+    command = require('./command'),
+    find = require('array-find');
 
 function Discutea(ircd, conf) {
     this.ircd = ircd;
     this.conf = conf;
     this.bot = undefined;
     this.channel = conf.channel;
-    this.conf.badreal.rage
     this.abuses = [];
     this.sql = mysql.createConnection(conf.sql);
     this.youtubekey = conf.youtube_api;
@@ -126,17 +123,13 @@ Discutea.prototype.init = function() {
             that.bot.send('KICK', '#Ados', u.nick, 'Salon réservé aux moins de 19 ans.');
         }
     });
-   
-    this.ircd.emitter.on('user_has_badreal', function (u, realname) {
-        that.processBadReal(u, realname);    
-    });
 
     this.ircd.emitter.on('user_accountname', function (u, account) {
-        that.bot.send('SAJOIN', u.nick, '#Vip-FR');
+        that.ircd.send('SVSJOIN', u.uid, '#Vip-FR');
     });
 
     this.ircd.emitter.on('user_is_mineur', function (u) {
-        that.bot.send('SAJOIN', u.nick, '#Ados');
+        that.ircd.send('SVSJOIN', u.uid, '#Ados');
     });
     
     this.ircd.emitter.on('user_has_role', function (u, role) {
@@ -210,41 +203,6 @@ Discutea.prototype.autoUnBan = function() {
             }
         }
     });
-}
-
-Discutea.prototype.processBadReal = function(u, realname) {
-    // remove accents
-    nreal = removeDiacritics(realname);
-    if (!/^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/.test(nreal)) {
-        exreal = realname.split(' ');
-        var age = '--';
-        var sexe = ' X ';
-        
-        if (this.conf.badreal.rage.test(exreal[0])) { age = exreal[0]; }
-        if (this.conf.badreal.rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
-    
-        nreal = age + sexe;
-    
-        if (u.region !== undefined) {
-            nreal = nreal + u.region;
-            if (nreal.length <= 30) {
-                nreal = nreal + ' ' + countries.getName(u.country, "fr");
-            }
-        } else {
-            if (u.country !== undefined) {
-                nreal = nreal + countries.getName(u.country, "fr");
-            } else {
-                nreal = nreal + 'Inconnu';
-            }
-        }
-        
-        nreal = removeDiacritics(nreal);
-    }
-    
-    nreal = nreal.replace(/\s\s+/g, ' ');
-    nreal = nreal.replace(':', '');
-
-    this.bot.send('CHGNAME', u.uid, nreal);    
 }
 
 Discutea.prototype.webirc = function(bot, sql) {

@@ -1,6 +1,8 @@
-var bobot = require('../../src/bot');
-var user = require('../../src/user');
-var mysql = require('mysql2');
+var bobot = require('../../src/bot'),
+    user = require('../../src/user'),
+    mysql = require('mysql2'),
+    countries = require("i18n-iso-countries"),
+    removeDiacritics = require('diacritics').remove;
 
 function Badserv(ircd, conf) {
     this.ircd = ircd;
@@ -50,6 +52,10 @@ Badserv.prototype.init = function() {
         }
     });
 
+    this.ircd.emitter.on('user_has_badreal', function (u, realname) {
+        that.processBadReal(u, realname);    
+    });
+    
     this.ircd.emitter.on('user_nick', function (u, last) {
         that.verifyBadnick(u);
     });
@@ -213,6 +219,41 @@ Badserv.prototype.isBadnick = function(nick) {
     }
 
     return matched;
+}
+
+Badserv.prototype.processBadReal = function(u, realname) {
+    // remove accents
+    nreal = removeDiacritics(realname);
+    if (!/^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/.test(nreal)) {
+        exreal = realname.split(' ');
+        var age = '--';
+        var sexe = ' X ';
+        
+        if (this.conf.badreal.rage.test(exreal[0])) { age = exreal[0]; }
+        if (this.conf.badreal.rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
+    
+        nreal = age + sexe;
+    
+        if (u.region !== undefined) {
+            nreal = nreal + u.region;
+            if (nreal.length <= 30) {
+                nreal = nreal + ' ' + countries.getName(u.country, "fr");
+            }
+        } else {
+            if (u.country !== undefined) {
+                nreal = nreal + countries.getName(u.country, "fr");
+            } else {
+                nreal = nreal + 'Inconnu';
+            }
+        }
+        
+        nreal = removeDiacritics(nreal);
+    }
+    
+    nreal = nreal.replace(/\s\s+/g, ' ');
+    nreal = nreal.replace(':', '');
+
+    this.bot.send('CHGNAME', u.uid, nreal);    
 }
 
 module.exports = Badserv;

@@ -115,7 +115,8 @@ Discutea.prototype.init = function() {
     });
 
     this.ircd.emitter.on('user_join#Ados', function (u, c) {
-        if ( (!u.role) && (u.age > 19) ) {
+        if ( (u.hasMode('I')) || (u.role) ) {return;}
+        if ( (u.age > 19) || (!u.age) || (u.age === '--') ) {
             that.bot.send('MODE', '#Ados', '+s');
             that.bot.send('MODE', '#Ados', '+e', '*!*@*discutea.com');
             that.bot.send('MODE', '#Ados', '+b', '*!*@' + u.vhost, ':');

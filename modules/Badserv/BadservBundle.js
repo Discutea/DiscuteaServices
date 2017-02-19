@@ -1,17 +1,16 @@
 var robot = require('../../src/bot'),
     user = require('../../src/user'),
-    mysql = require('mysql2'),
     countries = require("i18n-iso-countries"),
     removeDiacritics = require('diacritics').remove;
 
-function Badserv(ircd, conf, bot) {
+function Badserv(ircd, conf, bot, sql) {
     if (!(bot instanceof robot)) {return;}
     
     this.ircd = ircd;
     this.conf = conf;
     this.bot = bot;
     this.channel = '#Opers';
-    this.sql = mysql.createConnection(conf.sql);
+    this.sql = sql;
     this.badnicks = [];
 };
 

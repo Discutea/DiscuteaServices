@@ -14,12 +14,16 @@ switch (config.link.protocol) {
 var Finder = require('fs-finder'),
     fs = require('fs'),
     socket = require('./socket'),
-    bot = require('./bot');
+    bot = require('./bot'),
+    mysql = require('mysql2');
 
 const EventEmitter = require('events');
 class Emitter extends EventEmitter {}
 const emitter = new Emitter();
 
+if (config.sql) {
+    var sql = mysql.createConnection(config.sql);
+}
 
 var s = new socket.Socket(config.link.server, config.link.port, config.link.ssl);
 
@@ -33,13 +37,19 @@ s.conn.once('connect', function () {
             path = __dirname + '/../modules/' + moduleName;
             var files = Finder.from(path).findFiles('*Bundle.js');
             if (files.length === 1) {
+                b = undefined;
                 modconf = config.modules.config[moduleName];
                 if (modconf.bot) {
                     b = new bot( modconf.bot );
                     ircd.introduceBot( b );
                 }
                 mod = require(files[0]);
-                m = new mod(ircd, modconf, b);
+                if (modconf.requiresql) {
+                    m = new mod(ircd, modconf, b, sql);
+                } else {
+                    m = new mod(ircd, modconf, b, undefined);
+                }
+
                 m.init();
             }
         });        

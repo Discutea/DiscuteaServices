@@ -6,12 +6,11 @@ var robot = require('../../src/bot'),
     remove = require('unordered-array-remove'),
     getYouTubeID = require('get-youtube-id'),
     request = require('request'),
-    mysql = require('mysql2'),
     abuse = require('./abuse'),
     command = require('./command'),
     find = require('array-find');
 
-function Discutea(ircd, conf, bot) {
+function Discutea(ircd, conf, bot, sql) {
     if (!(bot instanceof robot)) {return;}
     
     this.ircd = ircd;
@@ -19,7 +18,7 @@ function Discutea(ircd, conf, bot) {
     this.bot = bot;
     this.channel = conf.channel;
     this.abuses = [];
-    this.sql = mysql.createConnection(conf.sql);
+    this.sql = sql;
     this.youtubekey = conf.youtube_api;
 };
 
@@ -32,7 +31,7 @@ Discutea.prototype.init = function() {
         that.bot.send('MODE', chan, '+qo', that.bot.nick, that.bot.nick, ':');
     });
 
-    setInterval(this.webirc, 15000, this.sql);
+    setInterval(this.webirc, 15000, that.sql);
     this.cmd = new command(this.ircd, this.bot, this.sql, this.conf.channel);
 
     /* test abuse */

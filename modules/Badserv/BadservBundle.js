@@ -1,29 +1,27 @@
-var bobot = require('../../src/bot'),
+var robot = require('../../src/bot'),
     user = require('../../src/user'),
     mysql = require('mysql2'),
     countries = require("i18n-iso-countries"),
     removeDiacritics = require('diacritics').remove;
 
-function Badserv(ircd, conf) {
+function Badserv(ircd, conf, bot) {
+    if (!(bot instanceof robot)) {return;}
+    
     this.ircd = ircd;
     this.conf = conf;
-    this.bot = undefined;
+    this.bot = bot;
     this.channel = '#Opers';
     this.sql = mysql.createConnection(conf.sql);
     this.badnicks = [];
 };
 
 Badserv.prototype.init = function() {
-    var botconf = this.conf.bot;
-    var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
-    this.ircd.introduceBot( bot );
-    bot.join('#Opers');
-    bot.send('MODE', this.channel, '+h', bot.nick, ':');
-    this.bot = bot;
-    this.updateBadnicks();
     var that = this;
+    that.bot.join('#Opers');
+    that.bot.send('MODE', this.channel, '+h', that.bot.nick, ':');
+    this.updateBadnicks();
 
-    this.ircd.emitter.on('privmsg'+bot.me+'', function (u, splited, splited2, data) {
+    this.ircd.emitter.on('privmsg'+that.bot.me+'', function (u, splited, splited2, data) {
         if (!(u instanceof user)) {return;}
     
         if (!u.isModerator()) {

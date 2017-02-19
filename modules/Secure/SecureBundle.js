@@ -1,30 +1,27 @@
-var bobot = require('../../src/bot');
+var robot = require('../../src/bot');
 var user = require('../../src/user');
 var request = require('request');
 
-function Secure(ircd, conf) {
+function Secure(ircd, conf, bot) {
+    if (!(bot instanceof robot)) {return;}
+    
     this.ircd = ircd;
     this.conf = conf;
-    this.bot = undefined;
+    this.bot = bot;
     this.channel = conf.channel;
 };
 
 Secure.prototype.init = function() {
-    
-    var botconf = this.conf.bot;
-    var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
-    this.ircd.introduceBot( bot );
-    bot.join(this.channel);
-    bot.send('MODE', this.channel, '+h', bot.nick, ':');
-    this.bot = bot;
     var that = this;
+    this.bot.join(this.channel);
+    this.bot.send('MODE', this.channel, '+h', this.bot.nick, ':');
 
-    this.ircd.emitter.on('notice'+bot.me+'', function (u, splited, splited2, data) {
+    this.ircd.emitter.on('notice'+this.bot.me+'', function (u, splited, splited2, data) {
         if (splited[3].substring(1,10) === '\1VERSION') {
             version = splited.slice(4, splited.length).join(' ');
             version = version.substring(0, version.length - 1);
             u.version = version;
-            bot.msg(that.channel, '\00304(Version)\00314 ' + u.nick + ' :' + version + '\003');
+            that.bot.msg(that.channel, '\00304(Version)\00314 ' + u.nick + ' :' + version + '\003');
         }
     });
     // END OF CTCP VERSION

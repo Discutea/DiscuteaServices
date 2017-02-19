@@ -1,4 +1,4 @@
-var bobot = require('../../src/bot'),
+var robot = require('../../src/bot'),
     user = require('../../src/user'),
     server = require('../../src/server'),
     channel = require('../../src/channel'),
@@ -11,10 +11,12 @@ var bobot = require('../../src/bot'),
     command = require('./command'),
     find = require('array-find');
 
-function Discutea(ircd, conf) {
+function Discutea(ircd, conf, bot) {
+    if (!(bot instanceof robot)) {return;}
+    
     this.ircd = ircd;
     this.conf = conf;
-    this.bot = undefined;
+    this.bot = bot;
     this.channel = conf.channel;
     this.abuses = [];
     this.sql = mysql.createConnection(conf.sql);
@@ -22,19 +24,16 @@ function Discutea(ircd, conf) {
 };
 
 Discutea.prototype.init = function() {
-    var botconf = this.conf.bot;
-    var bot = new bobot( botconf.uid, botconf.vhost, botconf.nick, botconf.ident, botconf.modes, botconf.realname );
-    this.ircd.introduceBot( bot );
-    bot.join(this.channel);
-    bot.send('MODE', this.channel, '+h', bot.nick, ':');
-    this.conf.officialChannels.forEach(function(chan) {
-        bot.join(chan);
-        bot.send('MODE', chan, '+qo', bot.nick, bot.nick, ':');
-    });
-    this.bot = bot;
-    setInterval(this.webirc, 15000, bot, this.sql);
-    this.cmd = new command(this.ircd, bot, this.sql, this.conf.channel);
     var that = this;
+    this.bot.join(this.channel);
+    this.bot.send('MODE', this.channel, '+h', this.bot.nick, ':');
+    this.conf.officialChannels.forEach(function(chan) {
+        that.bot.join(chan);
+        that.bot.send('MODE', chan, '+qo', that.bot.nick, that.bot.nick, ':');
+    });
+
+    setInterval(this.webirc, 15000, this.sql);
+    this.cmd = new command(this.ircd, this.bot, this.sql, this.conf.channel);
 
     /* test abuse */
     this.ircd.emitter.on('user_join', function (u, c) {
@@ -91,7 +90,7 @@ Discutea.prototype.init = function() {
         }
     });
     
-    this.ircd.emitter.on('privmsg'+bot.me+'', function (u, splited, splited2, data) {
+    this.ircd.emitter.on('privmsg'+that.bot.me+'', function (u, splited, splited2, data) {
         if (!(u instanceof user)) {return;}
         locale = 'en';
         
@@ -206,13 +205,14 @@ Discutea.prototype.autoUnBan = function() {
     });
 }
 
-Discutea.prototype.webirc = function(bot, sql) {
+Discutea.prototype.webirc = function(sql) {
+    var that = this;
     matched = false;
     sql.query('SELECT * FROM command', function (err, results) {
         results.forEach(function(res) {
             if ( (res.message) && (res.target) ) {
                 matched = true;
-                bot.msg(res.target, '(\002\00304WebSite\003\002) \00314' + res.message + '\003');
+                that.bot.msg(res.target, '(\002\00304WebSite\003\002) \00314' + res.message + '\003');
             }
         });
         if (matched) {

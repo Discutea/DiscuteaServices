@@ -3,23 +3,23 @@ exports = module.exports = Bot;
 var ip = require("ip");
 var config = require('../conf/config');
 
-function Bot(uid, vhost, nick, ident, modes, realname)
+function Bot(cfg)
 {
-    if (!(this instanceof Bot)) { return new Bot(uid, vhost, nick, ident, modes, realname); }
-    
+    if (!(this instanceof Bot)) { return new Bot(cfg); }
+
     this.ip = ip.address();
-    this.ident = ident;
-    this.realname = realname;
+    this.ident = cfg.ident;
+    this.realname = cfg.realname;
     this.ircd = undefined;
-    this.uid = uid;
-    this.vhost = vhost;
-    this.nick = nick;
+    this.uid = cfg.uid;
+    this.vhost = cfg.vhost;
+    this.nick = cfg.nick;
+
     if (config.link.protocol === 'inspircd') {
-        this.modes = modes;
+        this.modes = cfg.modes;
     } else {
         this.modes = modes.split(' ')[0];
     }
-    
     
     this.me = undefined;
     this.uptime = Math.floor(Date.now() / 1000);

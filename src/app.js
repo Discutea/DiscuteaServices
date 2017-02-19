@@ -11,9 +11,11 @@ switch (config.link.protocol) {
         console.log('We do not know the protocol ' + config.link.protocol);
 }
 
-var Finder = require('fs-finder');
-var fs = require('fs');
-var socket = require('./socket')
+var Finder = require('fs-finder'),
+    fs = require('fs'),
+    socket = require('./socket'),
+    bot = require('./bot');
+
 const EventEmitter = require('events');
 class Emitter extends EventEmitter {}
 const emitter = new Emitter();
@@ -32,8 +34,12 @@ s.conn.once('connect', function () {
             var files = Finder.from(path).findFiles('*Bundle.js');
             if (files.length === 1) {
                 modconf = config.modules.config[moduleName];
+                if (modconf.bot) {
+                    b = new bot( modconf.bot );
+                    ircd.introduceBot( b );
+                }
                 mod = require(files[0]);
-                m = new mod(ircd, modconf);
+                m = new mod(ircd, modconf, b);
                 m.init();
             }
         });        

@@ -31,9 +31,13 @@ Discutea.prototype.init = function() {
         that.bot.send('MODE', chan, '+qo', that.bot.nick, that.bot.nick, ':');
     });
 
-    setInterval(this.webirc, 15000, that.sql);
+    setInterval(this.webirc, 15000, that.sql, this.bot);
     this.cmd = new command(this.ircd, this.bot, this.sql, this.conf.channel);
 
+    this.ircd.emitter.on('kick'+that.bot.me+'', function (splited, data) {
+        that.bot.join(splited[2]);
+    });
+    
     /* test abuse */
     this.ircd.emitter.on('user_join', function (u, c) {
         find(that.abuses, function (search) {
@@ -204,14 +208,14 @@ Discutea.prototype.autoUnBan = function() {
     });
 }
 
-Discutea.prototype.webirc = function(sql) {
+Discutea.prototype.webirc = function(sql, bot) {
     var that = this;
     matched = false;
     sql.query('SELECT * FROM command', function (err, results) {
         results.forEach(function(res) {
             if ( (res.message) && (res.target) ) {
                 matched = true;
-                that.bot.msg(res.target, '(\002\00304WebSite\003\002) \00314' + res.message + '\003');
+                bot.msg(res.target, '(\002\00304WebSite\003\002) \00314' + res.message + '\003');
             }
         });
         if (matched) {

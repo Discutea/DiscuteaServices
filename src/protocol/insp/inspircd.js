@@ -82,6 +82,7 @@ Ircd.prototype.dispatcher = function (data) {
             break;
         case 'KICK':
             this.processKick(splited, splited2);
+            this.emitter.emit('kick' + splited[3], splited, data);
             break;
         case 'FTOPIC':
             this.processIntroduceTopic(splited, splited2);

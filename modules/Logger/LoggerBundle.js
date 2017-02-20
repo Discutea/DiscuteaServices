@@ -14,6 +14,10 @@ Logger.prototype.init = function() {
     that.bot.join(that.channel);
     that.bot.send('MODE', that.channel, '+h', that.bot.nick, ':');
 
+    this.ircd.emitter.on('kick'+that.bot.me+'', function (splited, data) {
+        that.bot.join(splited[2]);
+    });
+    
     this.ircd.emitter.on('filter_introduce', function (f) {
         if (!f.addby) {
             that.bot.msg(that.channel, '\00304(SpamFilter)\00314 Le serveur ajoute ' + f.regex + '\003 ');

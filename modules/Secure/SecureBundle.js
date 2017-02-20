@@ -16,6 +16,10 @@ Secure.prototype.init = function() {
     this.bot.join(this.channel);
     this.bot.send('MODE', this.channel, '+h', this.bot.nick, ':');
 
+    this.ircd.emitter.on('kick'+that.bot.me+'', function (splited, data) {
+        that.bot.join(splited[2]);
+    });
+    
     this.ircd.emitter.on('notice'+this.bot.me+'', function (u, splited, splited2, data) {
         if (splited[3].substring(1,10) === '\1VERSION') {
             version = splited.slice(4, splited.length).join(' ');

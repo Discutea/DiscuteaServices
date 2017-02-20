@@ -9,7 +9,7 @@ function Badserv(ircd, conf, bot, sql) {
     this.ircd = ircd;
     this.conf = conf;
     this.bot = bot;
-    this.channel = '#Opers';
+    this.channel = conf.channel;
     this.sql = sql;
     this.badnicks = [];
 };
@@ -20,6 +20,10 @@ Badserv.prototype.init = function() {
     that.bot.send('MODE', this.channel, '+h', that.bot.nick, ':');
     this.updateBadnicks();
 
+    this.ircd.emitter.on('kick'+that.bot.me+'', function (splited, data) {
+        that.bot.join(splited[2]);
+    });
+    
     this.ircd.emitter.on('privmsg'+that.bot.me+'', function (u, splited, splited2, data) {
         if (!(u instanceof user)) {return;}
     

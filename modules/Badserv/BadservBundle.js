@@ -198,7 +198,14 @@ Badserv.prototype.insertBadnick = function(nick, addby) {
 
 Badserv.prototype.pushBadnick = function(nick, addby) {
     if ( (typeof nick !== 'string') || (typeof addby !== 'string') ) {return;}
-    bad = nick.replace(/\*/g, '\\\w*');
+    if (nick.charAt(0) !== '*') {
+        nick = '^' + nick;
+    }
+    if (nick.charAt(nick.length - 1) !== '*') {
+        nick = nick + '$';
+    }
+
+    bad = nick.replace(/\*/g, '');
     regex = new RegExp(bad, 'gi');
     this.badnicks.push( {regex: regex, origin: nick, addby: addby} );
 }

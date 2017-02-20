@@ -197,11 +197,17 @@ Badserv.prototype.pushBadnick = function(nick, addby) {
 }
 
 Badserv.prototype.verifyCaps = function(nick) {
-    
     if (typeof nick === 'string') {
-      if (nick === nick.toUpperCase()) {
-        return true;
-      }
+        caps = 0;
+        for (i in nick) {
+            if (nick[i].match(/[A-Z]/)) { caps++; }
+        }
+        percent = (100 * caps) / nick.length;
+        round = Math.round(percent);
+    
+        if (round > this.conf.maxcapsnick) {
+            return true;
+        }
     }
     
     return false;

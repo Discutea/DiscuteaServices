@@ -82,7 +82,14 @@ Badserv.prototype.updateBadnicks = function() {
 
 Badserv.prototype.verifyBadnick = function(u) {
     if (!(u instanceof user)) {return;}
-
+    
+    if (u.nick.length < 4) {
+        rand = Math.floor(Date.now() / 1000).toString().substring(4);
+        newnick = u.nick + '_' + rand;
+        this.bot.send('SANICK', u.nick, newnick, ':');
+        return;
+    }
+    
     isBad = this.isBadnick(u.nick);
     if ( isBad !== false) {
         rand = Math.floor(Date.now() / 1000).toString().substring(4);
@@ -204,8 +211,8 @@ Badserv.prototype.verifyCaps = function(nick) {
         }
         percent = (100 * caps) / nick.length;
         round = Math.round(percent);
-    
-        if (round > this.conf.maxcapsnick) {
+
+        if (+round > +this.conf.maxcapsnick) {
             return true;
         }
     }

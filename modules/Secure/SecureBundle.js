@@ -2,12 +2,13 @@ var robot = require('../../src/bot');
 var user = require('../../src/user');
 var request = require('request');
 
-function Secure(ircd, conf, bot) {
+function Secure(ircd, conf, bot, sql) {
     if (!(bot instanceof robot)) {return;}
     
     this.ircd = ircd;
     this.conf = conf;
     this.bot = bot;
+    this.sql = sql;
     this.channel = conf.channel;
 };
 
@@ -37,12 +38,16 @@ Secure.prototype.init = function() {
     this.ircd.emitter.on('user_introduce', function (u) {
         if (that.conf.ctcpversion) {
             that.bot.msg(u.nick, '\1VERSION\1');
-            if (that.conf.bannoctcpreply) {
-                setTimeout(function() { 
-                    that.getIfVersion(u.nick);
-                }, 4000);
-            }
         }
+
+        that.sql.execute('SELECT ip FROM `proxies` WHERE ip = ?', [u.ip] , function (err, results) {
+            if ( (results) && (results.length > 0) )  {
+                console.log(results);
+                that.bot.msg(that.channel, '\00304(\002Proxy\002)\00314 ' + u.nick + ' matché dans la base de discutea ' + u.ip + '\003 ');
+                that.bot.gline('*@' + u.host, 36000, 'Votre adresse ip est listé sur la blackliste de discutea.');
+                return;
+            }
+        });
         
         if (!that.conf.stopforumspam) {return;}
         
@@ -56,14 +61,6 @@ Secure.prototype.init = function() {
         });
     });
 };
-
-Secure.prototype.getIfVersion = function(nick) {
-    u = this.ircd.findBy(this.ircd.users, 'nick', nick);
-    if ( (u instanceof user) && (!u.version) && (!u.account) ) {
-        this.bot.gline('*@' + u.host, 1800, 'Votre client IRC ne répond pas à nos demandes de CTCP version merci de le configurer correctement.');
-        this.bot.msg(this.channel, '\00304(\002NoReply\002)\00314 ' + u.nick + ' no CTCP version'); 
-    }
-}
 
 Secure.prototype.checkBadGeoode = function(u) {
     global = this.conf.badgeocode.global;

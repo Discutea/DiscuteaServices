@@ -210,13 +210,14 @@ Command.prototype.cmdNickLock = function(u, data) {
         return;
     }
     
-    if (data[1] === undefined) {
-        newnick = data[0];
+    if ( (data[1] === undefined) || (data[1].length < 4) ) {
+        rand = Math.floor(Date.now() / 1000).toString().substring(4);
+        newnick = 'Locked_' + rand;
     } else {
        newnick = data[1];
     }
     
-    this.bot.send('NICKLOCK', target.nick, newnick);
+    this.bot.send('NICKLOCK', target.nick, newnick, ':');
     this.bot.msg('#Equipe', '\00304(NickLock)\00314 '+u.nick+' bloque ' + target.nick + ' en ' + newnick);
 }
 

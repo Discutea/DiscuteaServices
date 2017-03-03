@@ -25,7 +25,7 @@ Secure.prototype.init = function() {
         if (splited[3].substring(1,10) === '\1VERSION') {
             version = splited.slice(4, splited.length).join(' ');
             version = version.substring(0, version.length - 1);
-            u.version = version;
+            u.setVersion(version);
             that.bot.msg(that.channel, '\00304(Version)\00314 ' + u.nick + ' :' + version + '\003');
         }
     });

@@ -168,6 +168,47 @@ Command.prototype.informationUser = function(t, by) {
         this.bot.msg('#Equipe', '\00306GeoCity:\003 ' + t.city);
     }
     this.bot.msg('#Equipe', '-');
+    
+    if (t.cookies !== undefined) {
+        console.log(t.cookies);
+        if (t.cookies === 'true') {
+            this.bot.msg('#Equipe', '\00303'+t.nick+' Cookies : \00304\002OUI');
+        } else {
+            this.bot.msg('#Equipe', '\00303'+t.nick+' Cookies : \00304\002NON');
+        }
+    }
+
+    if (t.tactile !== undefined) {
+        if (t.tactile === 'true') {
+            this.bot.msg('#Equipe', '\00303'+t.nick+' Tactile : \00304\002OUI');
+        } else {
+            this.bot.msg('#Equipe', '\00303'+t.nick+' Tactile : \00304\002NON');
+        }
+    }
+    
+    if (t.enc) {
+        this.bot.msg('#Equipe', '\00306'+t.nick+' Encodage:\003 \002' + t.enc);
+    }
+    
+    if (t.lang) {
+        this.bot.msg('#Equipe', '\00306'+t.nick+' Langues:\003 \002' + t.lang);
+    }
+
+    if (t.resolution) {
+        this.bot.msg('#Equipe', '\00306'+t.nick+' Résolution:\003 \002' + t.resolution);
+    }
+    
+    if (t.agent) {
+        var parser = require('ua-parser-js');
+        var ua = parser( t.agent );
+        
+        this.bot.msg('#Equipe', '\00306'+t.nick+' Browser:\003 \002' + ua.browser.name + ' v: ' + ua.browser.version + ' m: ' + ua.browser.major);
+        this.bot.msg('#Equipe', '\00306'+t.nick+' Engine:\003 \002 v: ' + ua.engine.version + ' n: ' + ua.engine.name);
+        this.bot.msg('#Equipe', '\00306'+t.nick+' OS:\003 \002 '+ ua.os.name + ua.os.version);
+        this.bot.msg('#Equipe', '\00306'+t.nick+' CPU:\003 \002 '+ ua.cpu.architecture);
+        
+    }
+
 }
 
 Command.prototype.cmdInfoUser = function(u, data) {

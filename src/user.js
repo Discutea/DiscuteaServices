@@ -105,6 +105,14 @@ User.prototype.setGeoInfos = function (geo)
         if (country != ""){
             region = fips.longform(country+region);
         }
+
+        if (typeof region === 'string' && region.length && region.length > 30) {
+            var rsplit = region.split(' ');
+            if (rsplit[0]) {
+                region = rsplit[0];
+            }
+        }
+        
         this.region = region;
         
     } else if (this.iptype === 'ipv4') {

@@ -53,8 +53,8 @@ Badserv.prototype.init = function() {
         }
     });
 
-    this.ircd.emitter.on('user_has_badreal', function (u, realname) {
-        that.processBadReal(u, realname);    
+    this.ircd.emitter.on('user_has_geoinfos', function (u) {
+        that.processRealname(u);     
     });
     
     this.ircd.emitter.on('user_nick', function (u, last) {
@@ -242,35 +242,34 @@ Badserv.prototype.isBadnick = function(nick) {
     return matched;
 }
 
-Badserv.prototype.processBadReal = function(u, realname) {
-    // remove accents
-    nreal = removeDiacritics(realname);
-    if (!/^[0-9-]{2}[\s][mMHhfFwWCcX][\s][\x20-\x7E]{2,47}$/.test(nreal)) {
-        exreal = realname.split(' ');
-        var age = '--';
-        var sexe = ' X ';
+Badserv.prototype.processRealname = function(u) {
+
+    var nreal = removeDiacritics(u.realname);
+    var exreal = u.realname.split(' ');
+    var age = '--';
+    var sexe = ' X ';
         
-        if (this.conf.badreal.rage.test(exreal[0])) { age = exreal[0]; }
-        if (this.conf.badreal.rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
+    if (this.conf.badreal.rage.test(exreal[0])) { age = exreal[0]; }
+    if (this.conf.badreal.rsex.test(exreal[1])) { sexe = ' ' + exreal[1] + ' '; }
     
-        nreal = age + sexe;
-    
-        if (u.region !== undefined) {
-            nreal = nreal + u.region;
-            if (nreal.length <= 30) {
-                nreal = nreal + ' ' + countries.getName(u.country, "fr");
-            }
+    nreal = age + sexe;
+        
+    if (u.region !== undefined) {
+        nreal = nreal + u.region;
+        if (nreal.length <= 20) {
+            nreal = nreal + ' ' + countries.getName(u.country, "fr");
         } else {
-            if (u.country !== undefined) {
-                nreal = nreal + countries.getName(u.country, "fr");
-            } else {
-                nreal = nreal + 'Inconnu';
-            }
+            nreal = nreal + ' ' + u.country;
         }
-        
-        nreal = removeDiacritics(nreal);
+    } else {
+        if (u.country !== undefined) {
+            nreal = nreal + countries.getName(u.country, "fr");
+        } else {
+            nreal = nreal + 'Inconnu';
+        }
     }
-    
+        
+    nreal = removeDiacritics(nreal);
     nreal = nreal.replace(/\s\s+/g, ' ');
     nreal = nreal.replace(':', '');
 

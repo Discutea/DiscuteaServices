@@ -17,7 +17,7 @@ function Socket(server, port, ssl = false) {
 Socket.prototype.connect = function () {
     var that = this;
     if (this.ssl) {
-        var conn = tls.connect(this.port, this.server, {});
+        var conn = tls.connect(this.port, this.server, {rejectUnauthorized: false});
 
         conn.once('secureConnect', function(data){
             console.log('Starting the connection with tls ' + that.port + ' ' + that.server);

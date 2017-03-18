@@ -25,6 +25,9 @@ Command.prototype.dispatcher = function(u, cmd, data, locale) {
         case 'RULES':
             this.cmdRules(u, locale);
             break;
+        case 'MYINFOS':
+            this.cmdMyInfos(u, data);
+            break;
         case 'KHELP':
             this.cmdKHelp(u, data);
             break;
@@ -367,6 +370,37 @@ Command.prototype.cmdHelp = function(u) {
     }
 
     this.bot.notice(u.nick, '\00303GitHub: https://github.com/Discutea/DiscuteaServices/');
+}
+
+
+Command.prototype.cmdMyInfos = function(u, data) {
+    var vsplited = data.join(' ').split(':::');
+
+    if (vsplited.length > 1) {
+      vsplited.forEach(function(infos) {
+        info = infos.split(' ');
+        if (typeof info[1] === 'string') {
+          switch (info[0]) {
+            case 'c':
+              u.cookies = info[1];
+              break;
+            case 'ag':
+              u.agent = info.slice(1, info.length).join(' ');
+              break;
+            case 'enc':
+              u.enc = info.slice(1, info.length).join(' ');
+              break;
+            case 'lang':
+              u.lang = info.slice(1, info.length).join(' ');
+              break;
+            case 'r':
+              u.tactile = info[1];
+              u.resolution = info[2];
+              break;
+          }
+        }
+      });
+    }
 }
 
 Command.prototype.cmdRules = function(u, locale) {

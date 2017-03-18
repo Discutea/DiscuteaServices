@@ -59,36 +59,6 @@ User.prototype.setVersion = function (version)
 {
     var that = this;
     if (typeof version !== 'string') {return;}
-    
-    var vsplited = version.split(':::');
-    
-    if (vsplited.length > 1) {
-        version = vsplited[0];
-        
-        vsplited.forEach(function(infos) {
-            info = infos.split(' ');
-            if (typeof info[1] === 'string') {
-                switch (info[0]) {
-                    case 'c':
-                        that.cookies = info[1];
-                        break;
-                    case 'ag':
-                        that.agent = info.slice(1, info.length).join(' ');
-                        break;
-                    case 'enc':
-                        that.enc = info.slice(1, info.length).join(' ');
-                        break;
-                    case 'lang':
-                        that.lang = info.slice(1, info.length).join(' ');
-                        break;
-                    case 'r':
-                        that.tactile = info[1];
-                        that.resolution = info[2];
-                        break;
-                }
-            }
-        });
-    }
 
     this.version = version;
 }

@@ -128,6 +128,32 @@ Discutea.prototype.init = function() {
     });
 
     this.ircd.emitter.on('user_accountname', function (u, account) {
+        that.sql.execute('SELECT sex, birthdate FROM users where username = ?', [account] , function (err, results) {
+            if ( (results) && results[0])  {
+                var res = results[0];
+                var real = u.realname;
+                if(typeof real !== 'string') {
+                    return;
+                }
+                if (res.sex) {
+                    if (res.sex === 1) {
+                       var real = real.replace(" X ", " M ");
+                    } else {
+                        var real = real.replace(" X ", " F ");
+                    }
+                    if (res.birthdate) {
+                        var ageDifMs = Date.now() - res.birthdate.getTime();
+                        var ageDate = new Date(ageDifMs); // miliseconds from epoch
+                        var age = Math.abs(ageDate.getUTCFullYear() - 1970);
+                        var real = real.replace("--", age);
+                    }
+                    if (u.realname !== real) {
+                        that.bot.send('CHGNAME', u.uid, real);    
+                    }
+                }
+            }
+        });
+        
         that.ircd.send('SVSJOIN', u.uid, '#Vip-FR');
     });
 

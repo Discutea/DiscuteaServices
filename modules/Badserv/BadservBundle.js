@@ -243,7 +243,6 @@ Badserv.prototype.isBadnick = function(nick) {
 }
 
 Badserv.prototype.processRealname = function(u) {
-
     var nreal = removeDiacritics(u.realname);
     var exreal = u.realname.split(' ');
     var age = '--';
@@ -273,7 +272,7 @@ Badserv.prototype.processRealname = function(u) {
     nreal = nreal.replace(/\s\s+/g, ' ');
     nreal = nreal.replace(':', '');
 
-    this.bot.send('CHGNAME', u.uid, nreal);    
+    this.bot.send('CHGNAME', u.uid, nreal);
 }
 
 module.exports = Badserv;

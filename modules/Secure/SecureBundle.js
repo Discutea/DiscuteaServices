@@ -42,7 +42,6 @@ Secure.prototype.init = function() {
 
         that.sql.execute('SELECT ip FROM `proxies` WHERE ip = ?', [u.ip] , function (err, results) {
             if ( (results) && (results.length > 0) )  {
-                console.log(results);
                 that.bot.msg(that.channel, '\00304(\002Proxy\002)\00314 ' + u.nick + ' matché dans la base de discutea ' + u.ip + '\003 ');
                 that.bot.gline('*@' + u.host, 36000, 'Votre adresse ip est listé sur la blackliste de discutea.');
                 return;

@@ -144,38 +144,21 @@ Discutea.prototype.init = function() {
     this.ircd.emitter.on('SNONOTICE', function (splited, splited2, data) {
         //filter youtube\.com\/watch\?v\=[[:print:]]{11} block p :Discutea_Youtube
         //filter youtu\.be\/[[:print:]]{11} block p :Discutea_Youtube
-        if ( (splited2[2] === 'FILTER') && (splited[12] === 'Discutea_Youtube' ) ) {
-            nick = splited[4];
-            u = that.ircd.findBy(that.ircd.users, 'nick', nick);
-            if (!(u instanceof user)) {return;}
-            now = Math.floor(Date.now() / 1000);
-            
-            if (u.stocks['ytb'] !== undefined) {
-                timediff = now - u.stocks['ytb'];
-                if (timediff < 120) {
-                    wait = 120 - timediff;
-                    that.bot.notice(nick, '\00304\002[Anti Flood]\002\003 Vous devez patienter encore ' + wait + ' secondes pour poster une nouvelle vidéo');
-                    return;
+        if (splited2[2] === 'FILTER') {
+            if (splited[12] === '(Discutea_Youtube)' || splited[12] === '(HTTP_URL)') {
+                nick = splited[4];
+                u = that.ircd.findBy(that.ircd.users, 'nick', nick);
+                if (!(u instanceof user)) {return;}
+              
+                target = splited[11].replace(':', '');
+                txt = splited.slice(14, +splited.length);
+                
+                if (splited[12] === '(Discutea_Youtube)') {
+                    that.processYoutube(u, target, txt);
+                } else {
+                    that.bot.msg('#Netadmin ', '\00306nick: '+u.nick+' target: '+target+' txt: ' + txt);
                 }
             }
-            
-            chan = splited[11].replace(':', '');
-            vid = getYouTubeID( splited.slice(14, +splited.length) );
-
-            youtubeapi = 'https://www.googleapis.com/youtube/v3/videos?id='+vid+'&key='+that.youtubekey+'&part=snippet&fields=items/snippet/title'
-            
-            request(youtubeapi, function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    var infos = JSON.parse(body);
-                    infos.items.forEach(function(info) {
-                        u.stocks['ytb'] = now;
-                        that.bot.msg(chan, '\002\00301You\00304Tube\003\002  \00301Partage de\002\00306 '+nick+' \002\00301Titre:\00306 ' + info.snippet.title);
-                        that.bot.msg(chan, '\00306Lien:\003 https://youtu.be/' + vid);
-                        that.bot.msg('#Musique', '\002\00301You\00304Tube\003\002  \00301Partage de\002\00306 '+nick+' sur ' + chan + ' \002\00301Titre:\00306 ' + info.snippet.title);
-                        that.bot.msg('#Musique', '\00306Lien:\003 https://youtu.be/' + vid);
-                    });
-                }
-            });
         }
     });
     
@@ -183,6 +166,36 @@ Discutea.prototype.init = function() {
         that.autoUnBan();
     }, 3 * 60000);
 };
+
+Discutea.prototype.processYoutube = function(u, target, txt) {
+    var that = this;
+    now = Math.floor(Date.now() / 1000);
+            
+    if (u.stocks['ytb'] !== undefined) {
+        timediff = now - u.stocks['ytb'];
+        if (timediff < 120) {
+          wait = 120 - timediff;
+          that.bot.notice(u.nick, '\00304\002[Anti Flood]\002\003 Vous devez patienter encore ' + wait + ' secondes pour poster une nouvelle vidéo');
+          return;
+        }
+    }
+                    
+    vid = getYouTubeID( txt );
+    youtubeapi = 'https://www.googleapis.com/youtube/v3/videos?id='+vid+'&key='+that.youtubekey+'&part=snippet&fields=items/snippet/title'
+            
+    request(youtubeapi, function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+            var infos = JSON.parse(body);
+            infos.items.forEach(function(info) {
+                u.stocks['ytb'] = now;
+                that.bot.msg(target, '\002\00301You\00304Tube\003\002  \00301Partage de\002\00306 '+u.nick+' \002\00301Titre:\00306 ' + info.snippet.title);
+                that.bot.msg(target, '\00306Lien:\003 https://youtu.be/' + vid);
+                that.bot.msg('#Musique', '\002\00301You\00304Tube\003\002  \00301Partage de\002\00306 '+u.nick+' sur ' + target + ' \002\00301Titre:\00306 ' + info.snippet.title);
+                that.bot.msg('#Musique', '\00306Lien:\003 https://youtu.be/' + vid);
+            });
+        }
+    });
+}
 
 Discutea.prototype.autoUnBan = function() {
     var that = this;

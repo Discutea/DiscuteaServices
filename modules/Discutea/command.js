@@ -46,10 +46,38 @@ Command.prototype.dispatcher = function(u, cmd, data, locale) {
         case 'NMAP':
             this.cmdNmap(u, data);
             break;
+        case 'WARNING':
+            this.cmdWarning(u, data);
+            break;
         default:
             this.bot.msg(this.channel, '\00304Command:\003 ' + u.nick + ' cmd: ' + cmd + ' data: ' + data);
             break;
     }    
+}
+
+
+Command.prototype.cmdWarning = function(u, data) {
+    if (!u.isAdmin()) {
+        this.bot.notice(u.nick, '\00304Permission denied!');
+        return;
+    }
+    
+    if ( (!data) || (!data[0]) || (!data[1]) ) {
+        this.bot.notice(u.nick, '\00314[Warning] \00302Envoi un message important a un utilisateur');
+        this.bot.notice(u.nick, '\00314[NOTE] \00302Capture: https://github.com/Discutea/DiscuteaServices/issues/12');
+        this.bot.notice(u.nick, '\00314[UTILISATION] \00302!warning pseudo');
+        return;
+    }
+    
+    var target = this.ircd.findBy(this.ircd.users, 'nick', data[0]);
+    if (!(target instanceof user)) {
+        this.bot.notice(u.nick, '\00304 Désolé je ne trouve pas ' + data[0]);
+        return;
+    } else {
+        var msg = data.slice(1, data.length).join(' ');
+        this.bot.notice(target.nick, 'Important: ' + msg);
+        this.bot.notice(u.nick, '\00304 Envoyé a ' + target.nick + ' => ' + msg);
+    }
 }
 
 Command.prototype.cmdNmap = function(u, data) {
@@ -366,6 +394,12 @@ Command.prototype.cmdHelp = function(u) {
         this.bot.notice(u.nick, '\002\00310!spam (spam à ajouter)\002\00302 Ajoute une chaine de spam');
         this.bot.notice(u.nick, '\002\00310!spamlist\002\00302 Affiche la liste des spams');
         this.bot.notice(u.nick, '\002\00310!delspam (id)\002\00302 Retire un spam de la liste');
+        this.bot.notice(u.nick, '-');
+    }
+
+    if (u.isAdmin()) {
+        this.bot.notice(u.nick, '\00301[\002\00304ADMIN\002\00301]');
+        this.bot.notice(u.nick, '\002\00310!warning pseudo message\002\00302 Envoi un message important a un utilisateur');
         this.bot.notice(u.nick, '-');
     }
 

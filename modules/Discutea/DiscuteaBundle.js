@@ -64,7 +64,7 @@ Discutea.prototype.init = function() {
             if (!target.match(/\*/g)) {
                 u = that.ircd.findBy(that.ircd.users, 'vhost', target);
                 if ((u instanceof user) && (u.version) && (typeof u.version === 'string')) {                    
-                    if ( (u.version.split(' ')[0] === 'KiwiIRC') && (u.ident != 'KiwiIrc') ) {
+                    if ( u.version === 'Discutea irc client' ) {
                         a = new abuse(u.ident, c, ext.target, ext.time);
                         that.abuses.push(a);
                     }

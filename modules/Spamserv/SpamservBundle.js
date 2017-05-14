@@ -65,9 +65,9 @@ Spamserv.prototype.cmdSpam = function(u, data) {
     }
     
     action = 'gline';
-    flags = 'pnPqo';
+    flags = 'pnPqoc';
     regex = data.replace(/\./g, '\\.').replace(/\//g, '\\/').replace(/\*/g, '');
-    duration = 3600;
+    duration = 14400;
     reason = 'Spam_' + Math.floor(1000 + Math.random() * 9000);
     
     this.bot.send('FILTER', regex, action, flags, duration, reason);

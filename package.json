@@ -29,7 +29,7 @@
     "libnmap": "^0.4.19",
     "mysql2": "1.1.2",
     "request": "^2.88.2",
-    "ua-parser-js": "0.7.12",
+    "ua-parser-js": "0.7.24",
     "unordered-array-remove": "1.0.2"
   },
   "engines": {
